@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -76,16 +75,16 @@ public sealed class KernelFunctionTests3
         }
 
         // Assert
-        Assert.Equal(3, count);
+        Assert.Equal(2, count);
     }
 
     [Fact]
-    public async Task ItCanImportNativeFunctionsAsync()
+    public async Task ItCanImportMethodFunctionsAsync()
     {
         // Arrange
         var canary = false;
 
-        var arguments = new KernelFunctionArguments();
+        var arguments = new KernelArguments();
         arguments["done"] = "NO";
 
         // Note: the function doesn't have any SK attributes
@@ -112,10 +111,10 @@ public sealed class KernelFunctionTests3
     }
 
     [Fact]
-    public async Task ItCanImportNativeFunctionsWithExternalReferencesAsync()
+    public async Task ItCanImportMethodFunctionsWithExternalReferencesAsync()
     {
         // Arrange
-        var arguments = new KernelFunctionArguments();
+        var arguments = new KernelArguments();
         arguments["done"] = "NO";
 
         // Note: This is an important edge case that affects the function signature and how delegates
@@ -145,11 +144,6 @@ public sealed class KernelFunctionTests3
 
     private sealed class InvalidPlugin
     {
-        [KernelFunction]
-        public void Invalid1([KernelName("input"), Description("The x parameter")] string x, [KernelName("input"), Description("The y parameter")] string y)
-        {
-        }
-
         [KernelFunction]
         public void Invalid2(string y, CustomUnknownType n)
         {

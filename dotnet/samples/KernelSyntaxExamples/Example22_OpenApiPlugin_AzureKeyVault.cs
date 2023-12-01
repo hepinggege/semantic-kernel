@@ -50,7 +50,7 @@ public static class Example22_OpenApiPlugin_AzureKeyVault
             });
 
         // Add arguments for required parameters, arguments for optional ones can be skipped.
-        var arguments = new KernelFunctionArguments();
+        var arguments = new KernelArguments();
         arguments["secret-name"] = "<secret-name>";
         arguments["api-version"] = "7.0";
 
@@ -78,13 +78,13 @@ public static class Example22_OpenApiPlugin_AzureKeyVault
             new OpenApiFunctionExecutionParameters
             {
                 AuthCallback = authenticationProvider.AuthenticateRequestAsync,
+                ServerUrlOverride = new Uri(TestConfiguration.KeyVault.Endpoint),
                 EnableDynamicPayload = true
             });
 
         // Add arguments for required parameters, arguments for optional ones can be skipped.
-        var arguments = new KernelFunctionArguments
+        var arguments = new KernelArguments
         {
-            ["server-url"] = TestConfiguration.KeyVault.Endpoint,
             ["secret-name"] = "<secret-name>",
             ["api-version"] = "7.0",
             ["value"] = "<secret-value>",
