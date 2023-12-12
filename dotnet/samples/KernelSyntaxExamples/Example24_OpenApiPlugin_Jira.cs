@@ -5,10 +5,9 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Plugins.OpenAPI;
-using Microsoft.SemanticKernel.Plugins.OpenAPI.Authentication;
-using Microsoft.SemanticKernel.Plugins.OpenAPI.Model;
-using RepoUtils;
+using Microsoft.SemanticKernel.Plugins.OpenApi;
+using Microsoft.SemanticKernel.Plugins.OpenApi.Authentication;
+using Microsoft.SemanticKernel.Plugins.OpenApi.Model;
 
 // ReSharper disable once InconsistentNaming
 public static class Example24_OpenApiPlugin_Jira
@@ -32,12 +31,12 @@ public static class Example24_OpenApiPlugin_Jira
     /// </summary>
     public static async Task RunAsync()
     {
-        var kernel = new KernelBuilder().WithLoggerFactory(ConsoleLogger.LoggerFactory).Build();
+        Kernel kernel = new();
 
         // Change <your-domain> to a jira instance you have access to with your authentication credentials
         string serverUrl = $"https://{TestConfiguration.Jira.Domain}.atlassian.net/rest/api/latest/";
 
-        IKernelPlugin jiraFunctions;
+        KernelPlugin jiraFunctions;
         var tokenProvider = new BasicAuthenticationProvider(() =>
         {
             string s = $"{TestConfiguration.Jira.Email}:{TestConfiguration.Jira.ApiKey}";

@@ -3,8 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.AI.OpenAI;
-using RepoUtils;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 #pragma warning disable RCS1110 // Declare type inside namespace.
 #pragma warning disable CA1819 // Properties should not return arrays
@@ -31,9 +30,8 @@ public static class Example72_KernelStreaming
             return;
         }
 
-        var kernel = new KernelBuilder()
-            .WithLoggerFactory(ConsoleLogger.LoggerFactory)
-            .WithAzureOpenAIChatCompletion(
+        var kernel = Kernel.CreateBuilder()
+            .AddAzureOpenAIChatCompletion(
                 deploymentName: chatDeploymentName,
                 modelId: chatModelId,
                 endpoint: endpoint,
@@ -48,7 +46,7 @@ public static class Example72_KernelStreaming
         Console.WriteLine("\n===  Prompt Function - Streaming ===\n");
 
         // Streaming can be of any type depending on the underlying service the function is using.
-        await foreach (var update in kernel.InvokeStreamingAsync<StreamingChatContent>(funnyParagraphFunction))
+        await foreach (var update in kernel.InvokeStreamingAsync<OpenAIStreamingChatMessageContent>(funnyParagraphFunction))
         {
             // You will be always able to know the type of the update by checking the Type property.
             if (!roleDisplayed && update.Role.HasValue)
@@ -57,9 +55,9 @@ public static class Example72_KernelStreaming
                 roleDisplayed = true;
             }
 
-            if (update.ContentUpdate is { Length: > 0 })
+            if (update.Content is { Length: > 0 })
             {
-                Console.Write(update.ContentUpdate);
+                Console.Write(update.Content);
             }
         }
     }

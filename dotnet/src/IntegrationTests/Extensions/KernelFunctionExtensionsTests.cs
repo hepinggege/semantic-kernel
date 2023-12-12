@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.AI;
-using Microsoft.SemanticKernel.AI.TextCompletion;
-using Microsoft.SemanticKernel.Connectors.AI.OpenAI;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.TextGeneration;
 using SemanticKernel.IntegrationTests.Fakes;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,11 +25,11 @@ public sealed class KernelFunctionExtensionsTests : IDisposable
     [Fact]
     public async Task ItSupportsFunctionCallsAsync()
     {
-        Kernel target = new KernelBuilder()
-            .WithLoggerFactory(this._logger)
-            .WithServices(c => c.AddSingleton<ITextCompletion>(new RedirectTextCompletion()))
-            .WithPlugins(plugins => plugins.AddPluginFromObject<EmailPluginFake>())
-            .Build();
+        var builder = Kernel.CreateBuilder();
+        builder.Services.AddSingleton<ILoggerFactory>(this._logger);
+        builder.Services.AddSingleton<ITextGenerationService>(new RedirectTextGenerationService());
+        builder.Plugins.AddFromType<EmailPluginFake>();
+        Kernel target = builder.Build();
 
         var prompt = $"Hey {{{{{nameof(EmailPluginFake)}.GetEmailAddress}}}}";
 
@@ -43,11 +43,11 @@ public sealed class KernelFunctionExtensionsTests : IDisposable
     [Fact]
     public async Task ItSupportsFunctionCallsWithInputAsync()
     {
-        Kernel target = new KernelBuilder()
-            .WithLoggerFactory(this._logger)
-            .WithServices(c => c.AddSingleton<ITextCompletion>(new RedirectTextCompletion()))
-            .WithPlugins(plugins => plugins.AddPluginFromObject<EmailPluginFake>())
-            .Build();
+        var builder = Kernel.CreateBuilder();
+        builder.Services.AddSingleton<ILoggerFactory>(this._logger);
+        builder.Services.AddSingleton<ITextGenerationService>(new RedirectTextGenerationService());
+        builder.Plugins.AddFromType<EmailPluginFake>();
+        Kernel target = builder.Build();
 
         var prompt = $"Hey {{{{{nameof(EmailPluginFake)}.GetEmailAddress \"a person\"}}}}";
 
@@ -65,37 +65,20 @@ public sealed class KernelFunctionExtensionsTests : IDisposable
         this._logger.Dispose();
     }
 
-    private sealed class RedirectTextCompletion : ITextCompletion
+    private sealed class RedirectTextGenerationService : ITextGenerationService
     {
         public string? ModelId => null;
 
         public IReadOnlyDictionary<string, object?> Attributes => new Dictionary<string, object?>();
 
-        Task<IReadOnlyList<ITextResult>> ITextCompletion.GetCompletionsAsync(string prompt, PromptExecutionSettings? executionSettings, Kernel? kernel, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<TextContent>> GetTextContentsAsync(string prompt, PromptExecutionSettings? executionSettings, Kernel? kernel, CancellationToken cancellationToken)
         {
-            return Task.FromResult<IReadOnlyList<ITextResult>>(new List<ITextResult> { new RedirectTextCompletionResult(prompt) });
+            return Task.FromResult<IReadOnlyList<TextContent>>(new List<TextContent> { new(prompt) });
         }
 
-        public IAsyncEnumerable<T> GetStreamingContentAsync<T>(string prompt, PromptExecutionSettings? executionSettings = null, Kernel? kernel = null, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<StreamingTextContent> GetStreamingTextContentsAsync(string prompt, PromptExecutionSettings? executionSettings = null, Kernel? kernel = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
-        }
-    }
-
-    internal sealed class RedirectTextCompletionResult : ITextResult
-    {
-        private readonly string _completion;
-
-        public RedirectTextCompletionResult(string completion)
-        {
-            this._completion = completion;
-        }
-
-        public ModelResult ModelResult => new(this._completion);
-
-        public Task<string> GetCompletionAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(this._completion);
         }
     }
 }

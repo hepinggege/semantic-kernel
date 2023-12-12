@@ -2,13 +2,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel.AI.ChatCompletion;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Microsoft.SemanticKernel.Planning.Handlebars;
 
@@ -17,11 +16,6 @@ namespace Microsoft.SemanticKernel.Planning.Handlebars;
 /// </summary>
 public sealed class HandlebarsPlanner
 {
-    /// <summary>
-    /// Gets the stopwatch used for measuring planning time.
-    /// </summary>
-    public Stopwatch Stopwatch { get; } = new();
-
     private readonly HandlebarsPlannerConfig _config;
 
     /// <summary>
@@ -50,7 +44,6 @@ public sealed class HandlebarsPlanner
         return PlannerInstrumentation.CreatePlanAsync(
             static (HandlebarsPlanner planner, Kernel kernel, string goal, CancellationToken cancellationToken)
                 => planner.CreatePlanCoreAsync(kernel, goal, cancellationToken),
-            static (HandlebarsPlan plan) => plan.ToString(),
             this, kernel, goal, logger, cancellationToken);
     }
 
@@ -58,25 +51,25 @@ public sealed class HandlebarsPlanner
     {
         var availableFunctions = this.GetAvailableFunctionsManual(kernel, out var complexParameterTypes, out var complexParameterSchemas, cancellationToken);
         var createPlanPrompt = this.GetHandlebarsTemplate(kernel, goal, availableFunctions, complexParameterTypes, complexParameterSchemas);
-        var chatCompletion = kernel.GetService<IChatCompletion>();
+        var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
 
         // Extract the chat history from the rendered prompt
         string pattern = @"<(user~|system~|assistant~)>(.*?)<\/\1>";
         MatchCollection matches = Regex.Matches(createPlanPrompt, pattern, RegexOptions.Singleline);
 
         // Add the chat history to the chat
-        ChatHistory chatMessages = this.GetChatHistoryFromPrompt(createPlanPrompt, chatCompletion);
+        ChatHistory chatMessages = this.GetChatHistoryFromPrompt(createPlanPrompt, chatCompletionService);
 
         // Get the chat completion results
-        var completionResults = await chatCompletion.GenerateMessageAsync(chatMessages, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var completionResults = await chatCompletionService.GetChatMessageContentAsync(chatMessages, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        if (completionResults?.IndexOf("Additional helpers may be required", StringComparison.OrdinalIgnoreCase) >= 0)
+        if (completionResults.Content?.IndexOf("Additional helpers may be required", StringComparison.OrdinalIgnoreCase) >= 0)
         {
             var functionNames = availableFunctions.ToList().Select(func => $"{func.PluginName}{HandlebarsTemplateEngineExtensions.ReservedNameDelimiter}{func.Name}");
             throw new KernelException($"Unable to create plan for goal with available functions.\nGoal: {goal}\nAvailable Functions: {string.Join(", ", functionNames)}\nPlanner output:\n{completionResults}");
         }
 
-        Match match = Regex.Match(completionResults, @"```\s*(handlebars)?\s*(.*)\s*```", RegexOptions.Singleline);
+        Match match = Regex.Match(completionResults.Content, @"```\s*(handlebars)?\s*(.*)\s*```", RegexOptions.Singleline);
         if (!match.Success)
         {
             throw new KernelException("Could not find the plan in the results");
@@ -171,14 +164,14 @@ public sealed class HandlebarsPlanner
         return parameter;
     }
 
-    private ChatHistory GetChatHistoryFromPrompt(string prompt, IChatCompletion chatCompletion)
+    private ChatHistory GetChatHistoryFromPrompt(string prompt, IChatCompletionService chatCompletionService)
     {
         // Extract the chat history from the rendered prompt
         string pattern = @"<(user~|system~|assistant~)>(.*?)<\/\1>";
         MatchCollection matches = Regex.Matches(prompt, pattern, RegexOptions.Singleline);
 
         // Add the chat history to the chat
-        ChatHistory chatMessages = chatCompletion.CreateNewChat();
+        var chatMessages = new ChatHistory();
         foreach (Match m in matches.Cast<Match>())
         {
             string role = m.Groups[1].Value;
@@ -208,7 +201,7 @@ public sealed class HandlebarsPlanner
         Dictionary<string, string> complexParameterSchemas)
     {
         var plannerTemplate = this.ReadPrompt("CreatePlanPrompt.handlebars");
-        var arguments = new Dictionary<string, object?>()
+        var arguments = new KernelArguments()
             {
                 { "functions", availableFunctions},
                 { "goal", goal },

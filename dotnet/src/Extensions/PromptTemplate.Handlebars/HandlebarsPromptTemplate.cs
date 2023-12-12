@@ -24,11 +24,13 @@ internal sealed class HandlebarsPromptTemplate : IPromptTemplate
     }
 
     /// <inheritdoc/>
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public async Task<string> RenderAsync(Kernel kernel, KernelArguments? arguments = null, CancellationToken cancellationToken = default)
+#pragma warning restore CS1998
     {
         var handlebars = HandlebarsDotNet.Handlebars.Create();
 
-        foreach (IKernelPlugin plugin in kernel.Plugins)
+        foreach (KernelPlugin plugin in kernel.Plugins)
         {
             foreach (KernelFunction function in plugin)
             {
@@ -42,9 +44,7 @@ internal sealed class HandlebarsPromptTemplate : IPromptTemplate
 
         var template = handlebars.Compile(this._promptModel.Template);
 
-        var prompt = template(this.GetVariables(arguments));
-
-        return await Task.FromResult(prompt).ConfigureAwait(true);
+        return template(this.GetVariables(arguments));
     }
 
     #region private
@@ -52,15 +52,15 @@ internal sealed class HandlebarsPromptTemplate : IPromptTemplate
     private readonly ILogger _logger;
     private readonly PromptTemplateConfig _promptModel;
 
-    private Dictionary<string, string> GetVariables(KernelArguments? arguments)
+    private Dictionary<string, object?> GetVariables(KernelArguments? arguments)
     {
-        Dictionary<string, string> result = new();
+        Dictionary<string, object?> result = new();
 
-        foreach (var p in this._promptModel.InputParameters)
+        foreach (var p in this._promptModel.InputVariables)
         {
-            if (!string.IsNullOrEmpty(p.DefaultValue))
+            if (!string.IsNullOrEmpty(p.Default))
             {
-                result[p.Name] = p.DefaultValue;
+                result[p.Name] = p.Default;
             }
         }
 
