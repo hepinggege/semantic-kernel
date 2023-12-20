@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel.TemplateEngine;
-using Microsoft.SemanticKernel.TemplateEngine.Blocks;
 
 namespace Microsoft.SemanticKernel;
 
@@ -36,7 +35,7 @@ internal sealed class KernelPromptTemplate : IPromptTemplate
         Verify.NotNull(promptConfig.Template, nameof(promptConfig.Template));
 
         loggerFactory ??= NullLoggerFactory.Instance;
-        this._logger = loggerFactory.CreateLogger(typeof(KernelPromptTemplate));
+        this._logger = loggerFactory.CreateLogger(typeof(KernelPromptTemplate)) ?? NullLogger.Instance;
 
         this._blocks = this.ExtractBlocks(promptConfig, loggerFactory);
         AddMissingInputVariables(this._blocks, promptConfig);
@@ -45,6 +44,8 @@ internal sealed class KernelPromptTemplate : IPromptTemplate
     /// <inheritdoc/>
     public Task<string> RenderAsync(Kernel kernel, KernelArguments? arguments = null, CancellationToken cancellationToken = default)
     {
+        Verify.NotNull(kernel);
+
         return this.RenderAsync(this._blocks, kernel, arguments, cancellationToken);
     }
 

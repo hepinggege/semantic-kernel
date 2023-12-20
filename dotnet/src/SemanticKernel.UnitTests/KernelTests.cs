@@ -22,6 +22,8 @@ namespace SemanticKernel.UnitTests;
 
 public class KernelTests
 {
+    private const string InputParameterName = "input";
+
     [Fact]
     public void ItProvidesAccessToFunctionsViaFunctionCollection()
     {
@@ -152,8 +154,8 @@ public class KernelTests
         };
 
         // Act
-        IAsyncEnumerable<StreamingContentBase> enumerable = kernel.InvokeStreamingAsync<StreamingContentBase>(function);
-        IAsyncEnumerator<StreamingContentBase> enumerator = enumerable.GetAsyncEnumerator();
+        IAsyncEnumerable<StreamingKernelContent> enumerable = kernel.InvokeStreamingAsync<StreamingKernelContent>(function);
+        IAsyncEnumerator<StreamingKernelContent> enumerator = enumerable.GetAsyncEnumerator();
         var e = await Assert.ThrowsAsync<KernelFunctionCanceledException>(async () => await enumerator.MoveNextAsync());
 
         // Assert
@@ -183,8 +185,8 @@ public class KernelTests
         };
 
         // Act
-        IAsyncEnumerable<StreamingContentBase> enumerable = kernel.InvokeStreamingAsync<StreamingContentBase>(functions["GetAnyValue"]);
-        IAsyncEnumerator<StreamingContentBase> enumerator = enumerable.GetAsyncEnumerator();
+        IAsyncEnumerable<StreamingKernelContent> enumerable = kernel.InvokeStreamingAsync<StreamingKernelContent>(functions["GetAnyValue"]);
+        IAsyncEnumerator<StreamingKernelContent> enumerator = enumerable.GetAsyncEnumerator();
         var e = await Assert.ThrowsAsync<KernelFunctionCanceledException>(async () => await enumerator.MoveNextAsync());
 
         // Assert
@@ -403,11 +405,11 @@ public class KernelTests
 
         kernel.FunctionInvoking += (object? sender, FunctionInvokingEventArgs e) =>
         {
-            e.Arguments[KernelArguments.InputParameterName] = newInput;
+            e.Arguments["originalInput"] = newInput;
         };
 
         // Act
-        var result = await kernel.InvokeAsync(function, new(originalInput));
+        var result = await kernel.InvokeAsync(function, new() { ["originalInput"] = originalInput });
 
         // Assert
         Assert.Equal(newInput, result.GetValue<string>());
@@ -428,7 +430,7 @@ public class KernelTests
         };
 
         // Act
-        var result = await kernel.InvokeAsync(function, new(originalInput));
+        var result = await kernel.InvokeAsync(function, new() { [InputParameterName] = originalInput });
 
         // Assert
         Assert.Equal(newInput, result.GetValue<string>());
@@ -621,11 +623,11 @@ public class KernelTests
         Kernel kernel = builder.Build();
         var prompt = "Write a simple phrase about UnitTests {{$input}}";
         var sut = KernelFunctionFactory.CreateFromPrompt(prompt);
-        var variables = new KernelArguments("importance");
+        var variables = new KernelArguments() { [InputParameterName] = "importance" };
 
         var chunkCount = 0;
         // Act
-        await foreach (var chunk in sut.InvokeStreamingAsync<StreamingContentBase>(kernel, variables))
+        await foreach (var chunk in sut.InvokeStreamingAsync<StreamingKernelContent>(kernel, variables))
         {
             chunkCount++;
         }
@@ -647,21 +649,9 @@ public class KernelTests
     private Mock<ITextGenerationService> SetupStreamingMocks(params StreamingTextContent[] streamingContents)
     {
         var mockTextCompletion = new Mock<ITextGenerationService>();
-        mockTextCompletion.Setup(m => m.GetStreamingTextContentsAsync(It.IsAny<string>(), It.IsAny<PromptExecutionSettings>(), It.IsAny<Kernel>(), It.IsAny<CancellationToken>())).Returns(this.ToAsyncEnumerable(streamingContents));
+        mockTextCompletion.Setup(m => m.GetStreamingTextContentsAsync(It.IsAny<string>(), It.IsAny<PromptExecutionSettings>(), It.IsAny<Kernel>(), It.IsAny<CancellationToken>())).Returns(streamingContents.ToAsyncEnumerable());
 
         return mockTextCompletion;
-    }
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-#pragma warning disable IDE1006 // Naming Styles
-    private async IAsyncEnumerable<T> ToAsyncEnumerable<T>(IEnumerable<T> enumeration)
-#pragma warning restore IDE1006 // Naming Styles
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
-    {
-        foreach (var enumerationItem in enumeration)
-        {
-            yield return enumerationItem;
-        }
     }
 
     public class MyPlugin

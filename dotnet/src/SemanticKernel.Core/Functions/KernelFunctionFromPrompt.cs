@@ -22,40 +22,47 @@ namespace Microsoft.SemanticKernel;
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 internal sealed class KernelFunctionFromPrompt : KernelFunction
 {
-    // TODO: Revise these Create method XML comments
-
     /// <summary>
-    /// Creates a string-to-string prompt function, with no direct support for input context.
-    /// The function can be referenced in templates and will receive the context, but when invoked programmatically you
-    /// can only pass in a string in input and receive a string in output.
+    /// Creates a <see cref="KernelFunction"/> instance for a prompt specified via a prompt template.
     /// </summary>
-    /// <param name="promptTemplate">Plain language definition of the prompt function, using SK template language</param>
-    /// <param name="executionSettings">Optional LLM execution settings</param>
+    /// <param name="promptTemplate">Prompt template for the function, defined using the <see cref="PromptTemplateConfig.SemanticKernelTemplateFormat"/> template format.</param>
+    /// <param name="executionSettings">Default execution settings to use when invoking this prompt function.</param>
     /// <param name="functionName">A name for the given function. The name can be referenced in templates and used by the pipeline planner.</param>
-    /// <param name="description">Optional description, useful for the planner</param>
+    /// <param name="description">The description to use for the function.</param>
+    /// <param name="templateFormat">Optional format of the template. Must be provided if a prompt template factory is provided</param>
     /// <param name="promptTemplateFactory">Optional: Prompt template factory</param>
     /// <param name="loggerFactory">Logger factory</param>
     /// <returns>A function ready to use</returns>
     public static KernelFunction Create(
         string promptTemplate,
-        PromptExecutionSettings? executionSettings = null,
+        Dictionary<string, PromptExecutionSettings>? executionSettings = null,
         string? functionName = null,
         string? description = null,
+        string? templateFormat = null,
         IPromptTemplateFactory? promptTemplateFactory = null,
         ILoggerFactory? loggerFactory = null)
     {
         Verify.NotNullOrWhiteSpace(promptTemplate);
 
+        if (promptTemplateFactory is not null)
+        {
+            if (string.IsNullOrWhiteSpace(templateFormat))
+            {
+                throw new ArgumentException($"Template format is required when providing a {nameof(promptTemplateFactory)}", nameof(templateFormat));
+            }
+        }
+
         var promptConfig = new PromptTemplateConfig
         {
-            Name = functionName ?? RandomFunctionName(),
+            TemplateFormat = templateFormat ?? PromptTemplateConfig.SemanticKernelTemplateFormat,
+            Name = functionName,
             Description = description ?? "Generic function, unknown purpose",
             Template = promptTemplate
         };
 
         if (executionSettings is not null)
         {
-            promptConfig.ExecutionSettings.Add(executionSettings);
+            promptConfig.ExecutionSettings = executionSettings;
         }
 
         var factory = promptTemplateFactory ?? new KernelPromptTemplateFactory(loggerFactory);
@@ -67,9 +74,7 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
     }
 
     /// <summary>
-    /// Creates a string-to-string prompt function, with no direct support for input context.
-    /// The function can be referenced in templates and will receive the context, but when invoked programmatically you
-    /// can only pass in a string in input and receive a string in output.
+    /// Creates a <see cref="KernelFunction"/> instance for a prompt specified via a prompt template configuration.
     /// </summary>
     /// <param name="promptConfig">Prompt template configuration</param>
     /// <param name="promptTemplateFactory">Optional: Prompt template factory</param>
@@ -89,9 +94,9 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
     }
 
     /// <summary>
-    /// Allow to define a prompt function passing in the definition in natural language, i.e. the prompt template.
+    /// Creates a <see cref="KernelFunction"/> instance for a prompt specified via a prompt template and a prompt template configuration.
     /// </summary>
-    /// <param name="promptTemplate">Plain language definition of the prompt function, using SK template language</param>
+    /// <param name="promptTemplate">Prompt template for the function, defined using the <see cref="PromptTemplateConfig.SemanticKernelTemplateFormat"/> template format.</param>
     /// <param name="promptConfig">Prompt template configuration.</param>
     /// <param name="loggerFactory">Logger factory</param>
     /// <returns>A function ready to use</returns>
@@ -102,12 +107,6 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
     {
         Verify.NotNull(promptTemplate);
         Verify.NotNull(promptConfig);
-
-        if (string.IsNullOrEmpty(promptConfig.Name))
-        {
-            promptConfig.Name = RandomFunctionName();
-        }
-        Verify.ValidFunctionName(promptConfig.Name);
 
         return new KernelFunctionFromPrompt(
             template: promptTemplate,
@@ -123,7 +122,7 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
     {
         this.AddDefaultValues(arguments);
 
-        (var aiService, var renderedPrompt, var renderedEventArgs) = await this.RenderPromptAsync(kernel, arguments, cancellationToken).ConfigureAwait(false);
+        (var aiService, var executionSettings, var renderedPrompt, var renderedEventArgs) = await this.RenderPromptAsync(kernel, arguments, cancellationToken).ConfigureAwait(false);
         if (renderedEventArgs?.Cancel is true)
         {
             throw new OperationCanceledException($"A {nameof(Kernel)}.{nameof(Kernel.PromptRendered)} event handler requested cancellation before function invocation.");
@@ -131,14 +130,14 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
 
         if (aiService is IChatCompletionService chatCompletion)
         {
-            var chatContent = await chatCompletion.GetChatMessageContentAsync(renderedPrompt, arguments.ExecutionSettings, kernel, cancellationToken).ConfigureAwait(false);
+            var chatContent = await chatCompletion.GetChatMessageContentAsync(renderedPrompt, executionSettings, kernel, cancellationToken).ConfigureAwait(false);
             this.CaptureUsageDetails(chatContent.ModelId, chatContent.Metadata, this._logger);
             return new FunctionResult(this, chatContent, kernel.Culture, chatContent.Metadata);
         }
 
         if (aiService is ITextGenerationService textGeneration)
         {
-            var textContent = await textGeneration.GetTextContentWithDefaultParserAsync(renderedPrompt, arguments.ExecutionSettings, kernel, cancellationToken).ConfigureAwait(false);
+            var textContent = await textGeneration.GetTextContentWithDefaultParserAsync(renderedPrompt, executionSettings, kernel, cancellationToken).ConfigureAwait(false);
             this.CaptureUsageDetails(textContent.ModelId, textContent.Metadata, this._logger);
             return new FunctionResult(this, textContent, kernel.Culture, textContent.Metadata);
         }
@@ -154,20 +153,20 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
     {
         this.AddDefaultValues(arguments);
 
-        (var aiService, var renderedPrompt, var renderedEventArgs) = await this.RenderPromptAsync(kernel, arguments, cancellationToken).ConfigureAwait(false);
+        (var aiService, var executionSettings, var renderedPrompt, var renderedEventArgs) = await this.RenderPromptAsync(kernel, arguments, cancellationToken).ConfigureAwait(false);
         if (renderedEventArgs?.Cancel ?? false)
         {
             yield break;
         }
 
-        IAsyncEnumerable<StreamingContentBase>? asyncReference = null;
+        IAsyncEnumerable<StreamingKernelContent>? asyncReference = null;
         if (aiService is IChatCompletionService chatCompletion)
         {
-            asyncReference = chatCompletion.GetStreamingChatMessageContentsAsync(renderedPrompt, arguments.ExecutionSettings, kernel, cancellationToken);
+            asyncReference = chatCompletion.GetStreamingChatMessageContentsAsync(renderedPrompt, executionSettings, kernel, cancellationToken);
         }
         else if (aiService is ITextGenerationService textGeneration)
         {
-            asyncReference = textGeneration.GetStreamingTextContentsWithDefaultParserAsync(renderedPrompt, arguments.ExecutionSettings, kernel, cancellationToken);
+            asyncReference = textGeneration.GetStreamingTextContentsWithDefaultParserAsync(renderedPrompt, executionSettings, kernel, cancellationToken);
         }
         else
         {
@@ -209,13 +208,13 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
         IPromptTemplate template,
         PromptTemplateConfig promptConfig,
         ILoggerFactory? loggerFactory = null) : base(
-            promptConfig.Name,
-            promptConfig.Description,
+            promptConfig.Name ?? CreateRandomFunctionName(),
+            promptConfig.Description ?? string.Empty,
             promptConfig.GetKernelParametersMetadata(),
             promptConfig.GetKernelReturnParameterMetadata(),
             promptConfig.ExecutionSettings)
     {
-        this._logger = loggerFactory is not null ? loggerFactory.CreateLogger(typeof(KernelFunctionFactory)) : NullLogger.Instance;
+        this._logger = loggerFactory?.CreateLogger(typeof(KernelFunctionFactory)) ?? NullLogger.Instance;
 
         this._promptTemplate = template;
         this._promptConfig = promptConfig;
@@ -257,7 +256,7 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
         }
     }
 
-    private async Task<(IAIService, string, PromptRenderedEventArgs?)> RenderPromptAsync(Kernel kernel, KernelArguments arguments, CancellationToken cancellationToken)
+    private async Task<(IAIService, PromptExecutionSettings?, string, PromptRenderedEventArgs?)> RenderPromptAsync(Kernel kernel, KernelArguments arguments, CancellationToken cancellationToken)
     {
         var serviceSelector = kernel.ServiceSelector;
         IAIService? aiService;
@@ -265,7 +264,7 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
         // Try to use IChatCompletionService.
         if (serviceSelector.TrySelectAIService<IChatCompletionService>(
             kernel, this, arguments,
-            out IChatCompletionService? chatService, out PromptExecutionSettings? defaultExecutionSettings))
+            out IChatCompletionService? chatService, out PromptExecutionSettings? executionSettings))
         {
             aiService = chatService;
         }
@@ -273,12 +272,10 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
         {
             // If IChatCompletionService isn't available, try to fallback to ITextGenerationService,
             // throwing if it's not available.
-            (aiService, defaultExecutionSettings) = serviceSelector.SelectAIService<ITextGenerationService>(kernel, this, arguments);
+            (aiService, executionSettings) = serviceSelector.SelectAIService<ITextGenerationService>(kernel, this, arguments);
         }
 
         Verify.NotNull(aiService);
-
-        arguments.ExecutionSettings ??= defaultExecutionSettings;
 
         kernel.OnPromptRendering(this, arguments);
 
@@ -291,24 +288,28 @@ internal sealed class KernelFunctionFromPrompt : KernelFunction
 
         var renderedEventArgs = kernel.OnPromptRendered(this, arguments, renderedPrompt);
 
-        if (this._logger.IsEnabled(LogLevel.Trace) &&
-            renderedEventArgs is not null &&
+        if (renderedEventArgs is not null &&
             renderedEventArgs.Cancel is false &&
             renderedEventArgs.RenderedPrompt != renderedPrompt)
         {
-            this._logger.LogTrace("Rendered prompt changed by handler: {Prompt}", renderedEventArgs.RenderedPrompt);
+            renderedPrompt = renderedEventArgs.RenderedPrompt;
+
+            if (this._logger.IsEnabled(LogLevel.Trace))
+            {
+                this._logger.LogTrace("Rendered prompt changed by handler: {Prompt}", renderedEventArgs.RenderedPrompt);
+            }
         }
 
-        return (aiService, renderedPrompt, renderedEventArgs);
+        return (aiService, executionSettings, renderedPrompt, renderedEventArgs);
     }
 
     /// <summary>Create a random, valid function name.</summary>
-    private static string RandomFunctionName() => $"func{Guid.NewGuid():N}";
+    private static string CreateRandomFunctionName() => $"func{Guid.NewGuid():N}";
 
     /// <summary>
     /// Captures usage details, including token information.
     /// </summary>
-    private void CaptureUsageDetails(string? modelId, IDictionary<string, object?>? metadata, ILogger logger)
+    private void CaptureUsageDetails(string? modelId, IReadOnlyDictionary<string, object?>? metadata, ILogger logger)
     {
         if (!logger.IsEnabled(LogLevel.Information) &&
             !s_invocationTokenUsageCompletion.Enabled &&

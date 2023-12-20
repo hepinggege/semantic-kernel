@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.SemanticKernel.Plugins.OpenApi.Model;
+namespace Microsoft.SemanticKernel.Plugins.OpenApi;
 
 /// <summary>
 /// Class for extensions methods for the <see cref="RestApiOperation"/> class.
@@ -28,7 +28,7 @@ internal static class RestApiOperationExtensions
     /// <returns>The list of parameters.</returns>
     public static IReadOnlyList<RestApiOperationParameter> GetParameters(
         this RestApiOperation operation,
-        bool addPayloadParamsFromMetadata = false,
+        bool addPayloadParamsFromMetadata = true,
         bool enablePayloadNamespacing = false)
     {
         var parameters = new List<RestApiOperationParameter>(operation.Parameters);
