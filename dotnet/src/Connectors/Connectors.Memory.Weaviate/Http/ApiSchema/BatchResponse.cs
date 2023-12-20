@@ -2,8 +2,10 @@
 
 using System;
 using System.Text.Json.Serialization;
+using Microsoft.SemanticKernel.Connectors.Memory.Weaviate.Http.JsonConverter;
+using Microsoft.SemanticKernel.Connectors.Memory.Weaviate.Model;
 
-namespace Microsoft.SemanticKernel.Connectors.Weaviate;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Weaviate.Http.ApiSchema;
 
 // ReSharper disable once ClassNeverInstantiated.Global
 #pragma warning disable CA1812 // 'BatchResponse' is an internal class that is apparently never instantiated. If so, remove the code from the assembly. If this class is intended to contain only static members, make it 'static' (Module in Visual Basic).

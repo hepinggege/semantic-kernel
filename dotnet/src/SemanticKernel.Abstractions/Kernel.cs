@@ -169,43 +169,49 @@ public sealed class Kernel
     /// <summary>
     /// Provides an event that's raised prior to a function's invocation.
     /// </summary>
-    [Experimental("SKEXP0004")]
     public event EventHandler<FunctionInvokingEventArgs>? FunctionInvoking;
 
     /// <summary>
     /// Provides an event that's raised after a function's invocation.
     /// </summary>
-    [Experimental("SKEXP0004")]
     public event EventHandler<FunctionInvokedEventArgs>? FunctionInvoked;
 
     /// <summary>
     /// Provides an event that's raised prior to a prompt being rendered.
     /// </summary>
-    [Experimental("SKEXP0004")]
     public event EventHandler<PromptRenderingEventArgs>? PromptRendering;
 
     /// <summary>
     /// Provides an event that's raised after a prompt is rendered.
     /// </summary>
-    [Experimental("SKEXP0004")]
     public event EventHandler<PromptRenderedEventArgs>? PromptRendered;
 
     #region GetServices
-    /// <summary>Gets a required service from the <see cref="Services"/> provider.</summary>
+    /// <summary>Gets a service from the <see cref="Services"/> collection.</summary>
     /// <typeparam name="T">Specifies the type of the service to get.</typeparam>
-    /// <param name="serviceKey">An object that specifies the key of the service to get.</param>
+    /// <param name="serviceId">An object that specifies the key of the service to get.</param>
     /// <returns>The found service instance.</returns>
     /// <exception cref="KernelException">A service of the specified type and name could not be found.</exception>
-    public T GetRequiredService<T>(object? serviceKey = null) where T : class
+    /// <remarks>
+    /// The behavior of this method is not the same as that of <see cref="IServiceProvider.GetService(Type)"/>
+    /// on the exposed <see cref="Services"/>. Rather, it is opinionated view around it. If a <paramref name="serviceId"/>
+    /// is provided, it will attempt to find a service registered with that key. If no <paramref name="serviceId"/>
+    /// is provided, it will attempt to find any service registered, regardless of whether it was registered with
+    /// with a key. If multiple services meet the criteria, it will return one of those registered, but no guarantee
+    /// on exactly which. For certain services, like <see cref="ILoggerFactory"/>, it will also return a default implementation
+    /// if no key was specified and no service was found. If it's able to find the specified service, that service is returned.
+    /// Otherwise, an exception is thrown.
+    /// </remarks>
+    public T GetRequiredService<T>(string? serviceId = null) where T : class
     {
         T? service = null;
 
-        if (serviceKey is not null)
+        if (serviceId is not null)
         {
             if (this.Services is IKeyedServiceProvider)
             {
                 // We were given a service ID, so we need to use the keyed service lookup.
-                service = this.Services.GetKeyedService<T>(serviceKey);
+                service = this.Services.GetRequiredKeyedService<T>(serviceId);
             }
         }
         else
@@ -225,9 +231,9 @@ public sealed class Kernel
         if (service is null)
         {
             string message =
-                serviceKey is null ? $"Service of type '{typeof(T)}' not registered." :
-                this.Services is not IKeyedServiceProvider ? $"Key '{serviceKey}' specified but service provider '{this.Services}' is not a {nameof(IKeyedServiceProvider)}." :
-                $"Service of type '{typeof(T)}' and key '{serviceKey}' not registered.";
+                serviceId is null ? $"Service of type '{typeof(T)}' not registered." :
+                this.Services is not IKeyedServiceProvider ? $"Key '{serviceId}' specified but service provider '{this.Services}' is not a {nameof(IKeyedServiceProvider)}." :
+                $"Service of type '{typeof(T)}' and key '{serviceId}' not registered.";
 
             throw new KernelException(message);
         }
@@ -250,7 +256,7 @@ public sealed class Kernel
             // mapping. We can query for that service and and then use it to try to get a service.
             if (this.Services.GetKeyedService<Dictionary<Type, HashSet<object?>>>(KernelServiceTypeToKeyMappings) is { } typeToKeyMappings)
             {
-                if (typeToKeyMappings.TryGetValue(typeof(T), out HashSet<object?>? keys))
+                if (typeToKeyMappings.TryGetValue(typeof(T), out HashSet<object?> keys))
                 {
                     return keys.SelectMany(key => this.Services.GetKeyedServices<T>(key));
                 }
@@ -265,7 +271,6 @@ public sealed class Kernel
     #endregion
 
     #region Internal Event Helpers
-    [Experimental("SKEXP0004")]
     internal FunctionInvokingEventArgs? OnFunctionInvoking(KernelFunction function, KernelArguments arguments)
     {
         FunctionInvokingEventArgs? eventArgs = null;
@@ -278,7 +283,6 @@ public sealed class Kernel
         return eventArgs;
     }
 
-    [Experimental("SKEXP0004")]
     internal FunctionInvokedEventArgs? OnFunctionInvoked(KernelFunction function, KernelArguments arguments, FunctionResult result)
     {
         FunctionInvokedEventArgs? eventArgs = null;
@@ -291,7 +295,6 @@ public sealed class Kernel
         return eventArgs;
     }
 
-    [Experimental("SKEXP0004")]
     internal PromptRenderingEventArgs? OnPromptRendering(KernelFunction function, KernelArguments arguments)
     {
         PromptRenderingEventArgs? eventArgs = null;
@@ -304,7 +307,6 @@ public sealed class Kernel
         return eventArgs;
     }
 
-    [Experimental("SKEXP0004")]
     internal PromptRenderedEventArgs? OnPromptRendered(KernelFunction function, KernelArguments arguments, string renderedPrompt)
     {
         PromptRenderedEventArgs? eventArgs = null;
@@ -435,14 +437,14 @@ public sealed class Kernel
     /// The function will not be invoked until an enumerator is retrieved from the returned <see cref="IAsyncEnumerable{T}"/>
     /// and its iteration initiated via an initial call to <see cref="IAsyncEnumerator{T}.MoveNextAsync"/>.
     /// </remarks>
-    public IAsyncEnumerable<StreamingKernelContent> InvokeStreamingAsync(
+    public IAsyncEnumerable<StreamingContentBase> InvokeStreamingAsync(
         KernelFunction function,
         KernelArguments? arguments = null,
         CancellationToken cancellationToken = default)
     {
         Verify.NotNull(function);
 
-        return function.InvokeStreamingAsync<StreamingKernelContent>(this, arguments, cancellationToken);
+        return function.InvokeStreamingAsync<StreamingContentBase>(this, arguments, cancellationToken);
     }
 
     /// <summary>
@@ -460,7 +462,7 @@ public sealed class Kernel
     /// The function will not be invoked until an enumerator is retrieved from the returned <see cref="IAsyncEnumerable{T}"/>
     /// and its iteration initiated via an initial call to <see cref="IAsyncEnumerator{T}.MoveNextAsync"/>.
     /// </remarks>
-    public IAsyncEnumerable<StreamingKernelContent> InvokeStreamingAsync(
+    public IAsyncEnumerable<StreamingContentBase> InvokeStreamingAsync(
         string? pluginName,
         string functionName,
         KernelArguments? arguments = null,
@@ -470,7 +472,7 @@ public sealed class Kernel
 
         var function = this.Plugins.GetFunction(pluginName, functionName);
 
-        return function.InvokeStreamingAsync<StreamingKernelContent>(this, arguments, cancellationToken);
+        return function.InvokeStreamingAsync<StreamingContentBase>(this, arguments, cancellationToken);
     }
 
     /// <summary>

@@ -3,8 +3,7 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-
-namespace Microsoft.SemanticKernel.Http;
+using Microsoft.SemanticKernel.Http;
 
 /// <summary>
 /// Provides extension methods for working with HTTP content in a way that translates HttpRequestExceptions into HttpOperationExceptions.

@@ -17,9 +17,9 @@ namespace Microsoft.SemanticKernel.Connectors.OpenAI;
 internal sealed class AzureOpenAIClientCore : ClientCore
 {
     /// <summary>
-    /// Gets the key used to store the deployment name in the <see cref="IAIService.Attributes"/> dictionary.
+    /// Key used to store the deployment name in the <see cref="IAIService.Attributes"/> dictionary.
     /// </summary>
-    public static string DeploymentNameKey => "DeploymentName";
+    public const string DeploymentNameKey = "DeploymentName";
 
     /// <summary>
     /// OpenAI / Azure OpenAI Client

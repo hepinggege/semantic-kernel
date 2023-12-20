@@ -3,7 +3,7 @@
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.SemanticKernel.Connectors.Pinecone;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Pinecone.Model;
 
 /// <summary>
 /// The current status of a index.

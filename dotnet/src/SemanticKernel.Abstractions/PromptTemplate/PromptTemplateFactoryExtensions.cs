@@ -3,7 +3,7 @@
 namespace Microsoft.SemanticKernel;
 
 /// <summary>
-/// Provides extension methods for operating on <see cref="IPromptTemplateFactory"/> instances.
+/// Represents a factory for prompt templates for one or more prompt template formats.
 /// </summary>
 public static class PromptTemplateFactoryExtensions
 {

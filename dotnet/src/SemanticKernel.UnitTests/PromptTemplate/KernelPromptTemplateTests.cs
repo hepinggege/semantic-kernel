@@ -6,7 +6,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.TemplateEngine;
+using Microsoft.SemanticKernel.TemplateEngine.Blocks;
 using SemanticKernel.UnitTests.XunitHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,7 +15,6 @@ namespace SemanticKernel.UnitTests.PromptTemplate;
 
 public sealed class KernelPromptTemplateTests
 {
-    private const string InputParameterName = "input";
     private const string DateFormat = "M/d/yyyy";
     private readonly KernelPromptTemplateFactory _factory;
     private readonly KernelArguments _arguments;
@@ -26,7 +25,7 @@ public sealed class KernelPromptTemplateTests
     {
         this._logger = testOutputHelper;
         this._factory = new KernelPromptTemplateFactory(TestConsoleLogger.LoggerFactory);
-        this._arguments = new KernelArguments() { [InputParameterName] = Guid.NewGuid().ToString("X") };
+        this._arguments = new KernelArguments(Guid.NewGuid().ToString("X"));
         this._kernel = new Kernel();
     }
 
@@ -294,7 +293,7 @@ public sealed class KernelPromptTemplateTests
 
         this._kernel.Plugins.Add(KernelPluginFactory.CreateFromFunctions("plugin", "description", new[] { func }));
 
-        this._arguments[InputParameterName] = "INPUT-BAR";
+        this._arguments[KernelArguments.InputParameterName] = "INPUT-BAR";
 
         var template = "foo-{{plugin.function}}-baz";
         var target = (KernelPromptTemplate)this._factory.Create(new PromptTemplateConfig(template));
@@ -350,7 +349,7 @@ public sealed class KernelPromptTemplateTests
 
         this._kernel.Plugins.Add(KernelPluginFactory.CreateFromFunctions("plugin", "description", new[] { func }));
 
-        this._arguments[InputParameterName] = "Mario";
+        this._arguments[KernelArguments.InputParameterName] = "Mario";
         this._arguments["someDate"] = "2023-08-25T00:00:00";
 
         var template = "foo-{{plugin.function input=$input age='42' slogan='Let\\'s-a go!' date=$someDate}}-baz";
@@ -367,7 +366,7 @@ public sealed class KernelPromptTemplateTests
     public void ItHandlesSyntaxErrors()
     {
         // Arrange
-        this._arguments[InputParameterName] = "Mario";
+        this._arguments[KernelArguments.InputParameterName] = "Mario";
         this._arguments["someDate"] = "2023-08-25T00:00:00";
         var template = "foo-{{function input=$input age=42 slogan='Let\\'s-a go!' date=$someDate}}-baz";
 
@@ -397,7 +396,7 @@ public sealed class KernelPromptTemplateTests
 
         this._kernel.Plugins.Add(KernelPluginFactory.CreateFromFunctions("plugin", "description", new[] { func }));
 
-        this._arguments[InputParameterName] = "Mario";
+        this._arguments[KernelArguments.InputParameterName] = "Mario";
         this._arguments["someDate"] = "2023-08-25T00:00:00";
 
         var template = "foo-{{plugin.function $input age='42' slogan='Let\\'s-a go!' date=$someDate}}-baz";
@@ -416,7 +415,7 @@ public sealed class KernelPromptTemplateTests
         // Arrange
         var template = "{{func1}} {{func2}} {{func3 $myVar}}";
         var target = (KernelPromptTemplate)this._factory.Create(new PromptTemplateConfig(template));
-        this._arguments[InputParameterName] = "A";
+        this._arguments[KernelArguments.InputParameterName] = "A";
         this._arguments["myVar"] = "C";
 
         string MyFunction1Async(string input)

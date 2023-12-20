@@ -2,8 +2,9 @@
 
 using System;
 using System.Text.Json.Nodes;
+using Microsoft.SemanticKernel.Plugins.OpenApi.Model;
 
-namespace Microsoft.SemanticKernel.Plugins.OpenApi;
+namespace Microsoft.SemanticKernel.Plugins.OpenApi.Serialization;
 
 /// <summary>
 /// Serializes REST API operation parameter of the 'Simple' style.
@@ -16,16 +17,15 @@ internal static class SimpleStyleParameterSerializer
     /// <param name="parameter">The REST API operation parameter to serialize.</param>
     /// <param name="argument">The parameter argument.</param>
     /// <returns>The serialized parameter.</returns>
-    public static string Serialize(RestApiOperationParameter parameter, JsonNode argument)
+    public static string Serialize(RestApiOperationParameter parameter, string argument)
     {
         const string ArrayType = "array";
 
         Verify.NotNull(parameter);
-        Verify.NotNull(argument);
 
         if (parameter.Style != RestApiOperationParameterStyle.Simple)
         {
-            throw new NotSupportedException($"Unsupported Rest API operation parameter style '{parameter.Style}' for parameter '{parameter.Name}'");
+            throw new ArgumentException($"Unexpected Rest API operation parameter style - `{parameter.Style}`", nameof(parameter));
         }
 
         // Serializing parameters of array type.
@@ -34,8 +34,8 @@ internal static class SimpleStyleParameterSerializer
             return SerializeArrayParameter(parameter, argument);
         }
 
-        // Handling parameters of primitive and removing extra quotes added by the JsonValue for string values.
-        return argument.ToString().Trim('"');
+        // Serializing parameters of primitive - integer, string, etc type.
+        return argument;
     }
 
     /// <summary>
@@ -44,11 +44,11 @@ internal static class SimpleStyleParameterSerializer
     /// <param name="parameter">The REST API operation parameter to serialize.</param>
     /// <param name="argument">The argument value.</param>
     /// <returns>The serialized parameter string.</returns>
-    private static string SerializeArrayParameter(RestApiOperationParameter parameter, object argument)
+    private static string SerializeArrayParameter(RestApiOperationParameter parameter, string argument)
     {
-        if (argument is not JsonArray array)
+        if (JsonNode.Parse(argument) is not JsonArray array)
         {
-            throw new ArgumentException(parameter.Name, $"Unexpected argument type '{argument.GetType()} with value '{argument}' for parameter type '{parameter.Type}'.");
+            throw new KernelException($"Can't deserialize parameter name '{parameter.Name}' argument '{argument}' to JSON array.");
         }
 
         return ArrayParameterValueSerializer.SerializeArrayAsDelimitedValues(array, delimiter: ",", encode: false); //1,2,3

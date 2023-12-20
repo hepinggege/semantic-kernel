@@ -3,7 +3,6 @@
 #define DISABLEHOST // Comment line to enable
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Experimental.Assistants;
@@ -119,7 +118,7 @@ public sealed class RunHarness
             var messageUser = await thread.AddUserMessageAsync(message).ConfigureAwait(true);
             this.LogMessage(messageUser);
 
-            var assistantMessages = await thread.InvokeAsync(assistant).ToArrayAsync().ConfigureAwait(true);
+            var assistantMessages = await thread.InvokeAsync(assistant).ConfigureAwait(true);
             this.LogMessages(assistantMessages);
         }
     }

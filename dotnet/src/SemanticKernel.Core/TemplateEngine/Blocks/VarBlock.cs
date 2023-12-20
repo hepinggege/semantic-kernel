@@ -3,7 +3,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.SemanticKernel.TemplateEngine;
+namespace Microsoft.SemanticKernel.TemplateEngine.Blocks;
 
 internal sealed class VarBlock : Block, ITextRendering
 {

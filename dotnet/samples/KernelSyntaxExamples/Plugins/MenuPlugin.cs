@@ -13,7 +13,7 @@ public sealed class MenuPlugin
     {
         return @"
 Special Soup: Clam Chowder
-Special Salad: Cobb Salad
+Special Salad: Cobb Chowder
 Special Drink: Chai Tea
 ";
     }

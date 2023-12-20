@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-import logging
-from typing import Any, List, Optional
+from logging import Logger
+from typing import List, Optional
+
+from pydantic import PrivateAttr
 
 from semantic_kernel.sk_pydantic import SKBaseModel
 from semantic_kernel.template_engine.blocks.block import Block
@@ -10,8 +12,7 @@ from semantic_kernel.template_engine.blocks.function_id_block import FunctionIdB
 from semantic_kernel.template_engine.blocks.symbols import Symbols
 from semantic_kernel.template_engine.blocks.val_block import ValBlock
 from semantic_kernel.template_engine.blocks.var_block import VarBlock
-
-logger: logging.Logger = logging.getLogger(__name__)
+from semantic_kernel.utils.null_logger import NullLogger
 
 
 # BNF parsed by CodeTokenizer:
@@ -23,13 +24,15 @@ logger: logging.Logger = logging.getLogger(__name__)
 # [function-call]  ::= [function-id] | [function-id] [parameter]
 # [parameter]      ::= [variable] | [value]
 class CodeTokenizer(SKBaseModel):
-    def __init__(self, log: Optional[Any] = None):
-        super().__init__()
+    _log: Optional[Logger] = PrivateAttr(default_factory=NullLogger)
 
-        if log:
-            logger.warning(
-                "The `log` parameter is deprecated. Please use the `logging` module instead."
-            )
+    def __init__(self, log: Logger = None):
+        super().__init__()
+        self._log = log or NullLogger()
+
+    @property
+    def log(self) -> Logger:
+        return self._log
 
     def tokenize(self, text: str) -> List[Block]:
         # Remove spaces, which are ignored anyway
@@ -55,11 +58,11 @@ class CodeTokenizer(SKBaseModel):
         # 1 char only edge case
         if len(text) == 1:
             if next_char == Symbols.VAR_PREFIX:
-                blocks.append(VarBlock(text))
+                blocks.append(VarBlock(text, self.log))
             elif next_char in (Symbols.DBL_QUOTE, Symbols.SGL_QUOTE):
-                blocks.append(ValBlock(text))
+                blocks.append(ValBlock(text, self.log))
             else:
-                blocks.append(FunctionIdBlock(text))
+                blocks.append(FunctionIdBlock(text, self.log))
 
             return blocks
 
@@ -101,7 +104,7 @@ class CodeTokenizer(SKBaseModel):
 
                 # When we reach the end of the value, we add the block
                 if current_char == text_value_delimiter:
-                    blocks.append(ValBlock("".join(current_token_content)))
+                    blocks.append(ValBlock("".join(current_token_content), self.log))
                     current_token_content.clear()
                     current_token_type = None
                     space_separator_found = False
@@ -112,10 +115,12 @@ class CodeTokenizer(SKBaseModel):
             # Note: there might be multiple consecutive spaces
             if self._is_blank_space(current_char):
                 if current_token_type == BlockTypes.VARIABLE:
-                    blocks.append(VarBlock("".join(current_token_content)))
+                    blocks.append(VarBlock("".join(current_token_content), self.log))
                     current_token_content.clear()
                 elif current_token_type == BlockTypes.FUNCTION_ID:
-                    blocks.append(FunctionIdBlock("".join(current_token_content)))
+                    blocks.append(
+                        FunctionIdBlock("".join(current_token_content), self.log)
+                    )
                     current_token_content.clear()
 
                 space_separator_found = True
@@ -145,11 +150,11 @@ class CodeTokenizer(SKBaseModel):
         current_token_content.append(next_char)
 
         if current_token_type == BlockTypes.VALUE:
-            blocks.append(ValBlock("".join(current_token_content)))
+            blocks.append(ValBlock("".join(current_token_content), self.log))
         elif current_token_type == BlockTypes.VARIABLE:
-            blocks.append(VarBlock("".join(current_token_content)))
+            blocks.append(VarBlock("".join(current_token_content), self.log))
         elif current_token_type == BlockTypes.FUNCTION_ID:
-            blocks.append(FunctionIdBlock("".join(current_token_content)))
+            blocks.append(FunctionIdBlock("".join(current_token_content), self.log))
         else:
             raise ValueError("Tokens must be separated by one space least")
 

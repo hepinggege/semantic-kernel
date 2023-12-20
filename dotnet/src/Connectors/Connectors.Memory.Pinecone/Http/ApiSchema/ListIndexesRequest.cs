@@ -2,7 +2,7 @@
 
 using System.Net.Http;
 
-namespace Microsoft.SemanticKernel.Connectors.Pinecone;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Pinecone.Http.ApiSchema;
 
 /// <summary>
 /// ListIndexesRequest

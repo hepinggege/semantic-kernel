@@ -1,27 +1,28 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-import logging
 from copy import deepcopy
-from typing import Dict, List, Tuple
+from logging import Logger
+from typing import Dict, List, Optional, Tuple
 
 from numpy import array, linalg, ndarray
 
 from semantic_kernel.memory.memory_record import MemoryRecord
 from semantic_kernel.memory.memory_store_base import MemoryStoreBase
-
-logger: logging.Logger = logging.getLogger(__name__)
+from semantic_kernel.utils.null_logger import NullLogger
 
 
 class VolatileMemoryStore(MemoryStoreBase):
     _store: Dict[str, Dict[str, MemoryRecord]]
+    _logger: Logger
 
-    def __init__(self, **kwargs) -> None:
-        """Initializes a new instance of the VolatileMemoryStore class."""
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
+    def __init__(self, logger: Optional[Logger] = None) -> None:
         self._store = {}
+        self._logger = logger or NullLogger()
+        """Initializes a new instance of the VolatileMemoryStore class.
+
+        Arguments:
+            logger {Optional[Logger]} -- The logger to use. (default: {None})
+        """
 
     async def create_collection_async(self, collection_name: str) -> None:
         """Creates a new collection if it does not exist.
@@ -312,7 +313,7 @@ class VolatileMemoryStore(MemoryStoreBase):
                 embedding_array[valid_indices].T
             ) / (query_norm * collection_norm[valid_indices])
             if not valid_indices.all():
-                logger.warning(
+                self._logger.warning(
                     "Some vectors in the embedding collection are zero vectors."
                     "Ignoring cosine similarity score computation for those vectors."
                 )

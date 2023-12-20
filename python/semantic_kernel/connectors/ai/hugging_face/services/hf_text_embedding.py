@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-import logging
-from typing import Any, List, Optional
+from logging import Logger
+from typing import List, Optional
 
 import sentence_transformers
 import torch
@@ -13,8 +13,6 @@ from semantic_kernel.connectors.ai.embeddings.embedding_generator_base import (
     EmbeddingGeneratorBase,
 )
 
-logger: logging.Logger = logging.getLogger(__name__)
-
 
 class HuggingFaceTextEmbedding(EmbeddingGeneratorBase, AIServiceClientBase):
     device: str
@@ -24,7 +22,7 @@ class HuggingFaceTextEmbedding(EmbeddingGeneratorBase, AIServiceClientBase):
         self,
         ai_model_id: str,
         device: Optional[int] = -1,
-        log: Optional[Any] = None,
+        log: Optional[Logger] = None,
     ) -> None:
         """
         Initializes a new instance of the HuggingFaceTextEmbedding class.
@@ -33,19 +31,16 @@ class HuggingFaceTextEmbedding(EmbeddingGeneratorBase, AIServiceClientBase):
             ai_model_id {str} -- Hugging Face model card string, see
                 https://huggingface.co/sentence-transformers
             device {Optional[int]} -- Device to run the model on, -1 for CPU, 0+ for GPU.
-            log  -- The logger instance to use. (Optional) (Deprecated)
+            log {Optional[Logger]} -- Logger instance.
 
         Note that this model will be downloaded from the Hugging Face model hub.
         """
-        if log:
-            logger.warning(
-                "The `log` parameter is deprecated. Please use the `logging` module instead."
-            )
         resolved_device = (
             f"cuda:{device}" if device >= 0 and torch.cuda.is_available() else "cpu"
         )
         super().__init__(
             ai_model_id=ai_model_id,
+            log=log,
             device=resolved_device,
             generator=sentence_transformers.SentenceTransformer(
                 model_name_or_path=ai_model_id, device=resolved_device
@@ -63,7 +58,7 @@ class HuggingFaceTextEmbedding(EmbeddingGeneratorBase, AIServiceClientBase):
             ndarray -- Embeddings for the texts.
         """
         try:
-            logger.info(f"Generating embeddings for {len(texts)} texts")
+            self.log.info(f"Generating embeddings for {len(texts)} texts")
             embeddings = self.generator.encode(texts)
             return array(embeddings)
         except Exception as e:

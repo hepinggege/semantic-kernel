@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Net.Http;
-using Microsoft.SemanticKernel.Http;
-using Microsoft.SemanticKernel.Memory;
+using Microsoft.SemanticKernel.Plugins.Memory;
 
-namespace Microsoft.SemanticKernel.Connectors.Weaviate;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Weaviate;
 
 /// <summary>
 /// Provides extension methods for the <see cref="MemoryBuilder"/> class to configure Weaviate connector.

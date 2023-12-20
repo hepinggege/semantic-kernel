@@ -1,14 +1,13 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-import logging
 import urllib
-from typing import List
+from logging import Logger
+from typing import List, Optional
 
 import aiohttp
 
 from semantic_kernel.connectors.search_engine.connector import ConnectorBase
-
-logger: logging.Logger = logging.getLogger(__name__)
+from semantic_kernel.utils.null_logger import NullLogger
 
 
 class GoogleConnector(ConnectorBase):
@@ -18,14 +17,14 @@ class GoogleConnector(ConnectorBase):
 
     _api_key: str
     _search_engine_id: str
+    _logger: Logger
 
-    def __init__(self, api_key: str, search_engine_id: str, **kwargs) -> None:
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
+    def __init__(
+        self, api_key: str, search_engine_id: str, logger: Optional[Logger] = None
+    ) -> None:
         self._api_key = api_key
         self._search_engine_id = search_engine_id
+        self._logger = logger if logger else NullLogger()
 
         if not self._api_key:
             raise ValueError("Google Custom Search API key cannot be null.")
@@ -64,7 +63,7 @@ class GoogleConnector(ConnectorBase):
         if offset < 0:
             raise ValueError("offset must be greater than 0.")
 
-        logger.info(
+        self._logger.info(
             f"Received request for google search with \
                 params:\nquery: {query}\nnum_results: {num_results}\noffset: {offset}"
         )
@@ -76,19 +75,19 @@ class GoogleConnector(ConnectorBase):
             f"&num={num_results}&start={offset}"
         )
 
-        logger.info("Sending GET request to Google Search API.")
+        self._logger.info("Sending GET request to Google Search API.")
 
         async with aiohttp.ClientSession() as session:
             async with session.get(_request_url, raise_for_status=True) as response:
                 if response.status == 200:
                     data = await response.json()
-                    logger.info("Request successful.")
-                    logger.info(f"API Response: {data}")
+                    self._logger.info("Request successful.")
+                    self._logger.info(f"API Response: {data}")
                     items = data["items"]
                     result = [x["snippet"] for x in items]
                     return result
                 else:
-                    logger.error(
+                    self._logger.error(
                         f"Request to Google Search API failed with status code: {response.status}."
                     )
                     return []

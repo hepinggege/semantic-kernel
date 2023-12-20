@@ -3,7 +3,7 @@
 using System;
 using Pgvector;
 
-namespace Microsoft.SemanticKernel.Connectors.Postgres;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Postgres;
 
 /// <summary>
 /// A postgres memory entry.

@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.SemanticKernel.Connectors.Pinecone;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Pinecone.Model;
 
 /// <summary>
 /// Used to create a new index.

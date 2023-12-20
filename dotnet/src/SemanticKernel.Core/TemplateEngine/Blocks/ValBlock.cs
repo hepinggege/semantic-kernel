@@ -2,7 +2,7 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.SemanticKernel.TemplateEngine;
+namespace Microsoft.SemanticKernel.TemplateEngine.Blocks;
 
 internal sealed class ValBlock : Block, ITextRendering
 {

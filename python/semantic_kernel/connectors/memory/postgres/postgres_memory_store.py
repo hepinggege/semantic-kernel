@@ -2,7 +2,7 @@
 
 import atexit
 import json
-import logging
+from logging import Logger
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -13,12 +13,11 @@ from psycopg_pool import ConnectionPool
 
 from semantic_kernel.memory.memory_record import MemoryRecord
 from semantic_kernel.memory.memory_store_base import MemoryStoreBase
+from semantic_kernel.utils.null_logger import NullLogger
 
 # Limitation based on pgvector documentation https://github.com/pgvector/pgvector#what-if-i-want-to-index-vectors-with-more-than-2000-dimensions
 MAX_DIMENSIONALITY = 2000
 DEFAULT_SCHEMA = "public"
-
-logger: logging.Logger = logging.getLogger(__name__)
 
 
 class PostgresMemoryStore(MemoryStoreBase):
@@ -28,6 +27,7 @@ class PostgresMemoryStore(MemoryStoreBase):
     _connection_pool: ConnectionPool
     _default_dimensionality: int
     _schema: str
+    _logger: Logger
 
     def __init__(
         self,
@@ -36,7 +36,7 @@ class PostgresMemoryStore(MemoryStoreBase):
         min_pool: int,
         max_pool: int,
         schema: str = DEFAULT_SCHEMA,
-        **kwargs,
+        logger: Optional[Logger] = None,
     ) -> None:
         """Initializes a new instance of the PostgresMemoryStore class.
 
@@ -48,11 +48,9 @@ class PostgresMemoryStore(MemoryStoreBase):
             schema {str} -- The schema to use. (default: {"public"})\n
             timezone_offset {Optional[str]} -- The timezone offset to use. (default: {None})
             Expected format '-7:00'. Uses the local timezone offset when not provided.\n
+            logger {Optional[Logger]} -- The logger to use. (default: {None})
         """
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
+
         self._check_dimensionality(default_dimensionality)
 
         self._connection_string = connection_string
@@ -62,6 +60,7 @@ class PostgresMemoryStore(MemoryStoreBase):
         )
         self._schema = schema
         atexit.register(self._connection_pool.close)
+        self._logger = logger or NullLogger()
 
     async def create_collection_async(
         self,

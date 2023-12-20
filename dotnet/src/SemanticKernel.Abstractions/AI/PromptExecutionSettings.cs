@@ -8,36 +8,36 @@ using Microsoft.SemanticKernel.TextGeneration;
 namespace Microsoft.SemanticKernel;
 
 /// <summary>
-/// Provides execution settings for an AI request.
-/// </summary>
-/// <remarks>
+/// Execution settings for an AI request.
 /// Implementors of <see cref="ITextGenerationService"/> or <see cref="IChatCompletionService"/> can extend this
-/// if the service they are calling supports additional properties. For an example, please reference
+/// if the service they are calling supports additional properties. For an example please reference
 /// the Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIPromptExecutionSettings implementation.
-/// </remarks>
+/// </summary>
 public class PromptExecutionSettings
 {
+    private Dictionary<string, object>? _extensionData;
+
     /// <summary>
-    /// Gets the default service identifier.
+    /// Service identifier.
+    /// This identifies a service and is set when the AI service is registered.
     /// </summary>
-    /// <remarks>
-    /// In a dictionary of <see cref="PromptExecutionSettings"/>, this is the key that should be used settings considered the default.
-    /// </remarks>
-    public static string DefaultServiceId => "default";
+    [JsonPropertyName("service_id")]
+    public string? ServiceId { get; set; } = null;
 
     /// <summary>
     /// Model identifier.
     /// This identifies the AI model these settings are configured for e.g., gpt-4, gpt-3.5-turbo
     /// </summary>
     [JsonPropertyName("model_id")]
-    public string? ModelId { get; set; }
+    public string? ModelId { get; set; } = null;
 
     /// <summary>
-    /// Extra properties that may be included in the serialized execution settings.
+    /// Extra properties
     /// </summary>
-    /// <remarks>
-    /// Avoid using this property if possible. Instead, use one of the classes that extends <see cref="PromptExecutionSettings"/>.
-    /// </remarks>
     [JsonExtensionData]
-    public Dictionary<string, object>? ExtensionData { get; set; }
+    public Dictionary<string, object> ExtensionData
+    {
+        get => this._extensionData ??= new();
+        set => this._extensionData = value;
+    }
 }

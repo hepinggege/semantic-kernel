@@ -1,10 +1,10 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 import itertools
-import logging
 import os
 from dataclasses import dataclass
 from enum import Enum
+from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -24,8 +24,7 @@ from usearch.index import (
 
 from semantic_kernel.memory.memory_record import MemoryRecord
 from semantic_kernel.memory.memory_store_base import MemoryStoreBase
-
-logger: logging.Logger = logging.getLogger(__name__)
+from semantic_kernel.utils.null_logger import NullLogger
 
 
 @dataclass
@@ -127,7 +126,7 @@ class USearchMemoryStore(MemoryStoreBase):
     def __init__(
         self,
         persist_directory: Optional[os.PathLike] = None,
-        **kwargs,
+        logger: Optional[Logger] = None,
     ) -> None:
         """
         Create a USearchMemoryStore instance.
@@ -143,11 +142,9 @@ class USearchMemoryStore(MemoryStoreBase):
         Args:
             persist_directory (Optional[os.PathLike], default=None): Directory for loading and saving collections.
             If None, collections are not loaded nor saved.
+            logger (Optional[Logger], default=None): Logger for diagnostics. If None, a NullLogger is used.
         """
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
+        self._logger = logger or NullLogger()
         self._persist_directory = (
             Path(persist_directory) if persist_directory is not None else None
         )

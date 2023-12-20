@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.SemanticKernel.Connectors.Qdrant;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Qdrant.Http.ApiSchema;
 
 internal sealed class GetVectorsRequest
 {

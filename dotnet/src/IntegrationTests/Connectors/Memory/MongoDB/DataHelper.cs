@@ -5,7 +5,7 @@ using System.Linq;
 using System.Numerics.Tensors;
 using Microsoft.SemanticKernel.Memory;
 
-namespace SemanticKernel.IntegrationTests.Connectors.MongoDB;
+namespace SemanticKernel.IntegrationTests.Connectors.Memory.MongoDB;
 
 internal static class DataHelper
 {

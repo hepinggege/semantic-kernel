@@ -5,8 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-
-namespace Microsoft.SemanticKernel.Http;
+using Microsoft.SemanticKernel.Http;
 
 internal static class HttpClientExtensions
 {

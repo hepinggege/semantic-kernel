@@ -13,6 +13,7 @@ using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Http;
 using SemanticKernel.IntegrationTests.TestSettings;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,7 +24,6 @@ namespace SemanticKernel.IntegrationTests.Connectors.OpenAI;
 
 public sealed class OpenAICompletionTests : IDisposable
 {
-    private const string InputParameterName = "input";
     private readonly IKernelBuilder _kernelBuilder;
     private readonly IConfigurationRoot _configuration;
 
@@ -63,7 +63,7 @@ public sealed class OpenAICompletionTests : IDisposable
         IReadOnlyKernelPluginCollection plugins = TestHelpers.ImportSamplePlugins(target, "ChatPlugin");
 
         // Act
-        FunctionResult actual = await target.InvokeAsync(plugins["ChatPlugin"]["Chat"], new() { [InputParameterName] = prompt });
+        FunctionResult actual = await target.InvokeAsync(plugins["ChatPlugin"]["Chat"], new(prompt));
 
         // Assert
         Assert.Contains(expectedAnswerContains, actual.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
@@ -84,7 +84,7 @@ public sealed class OpenAICompletionTests : IDisposable
         IReadOnlyKernelPluginCollection plugins = TestHelpers.ImportSamplePlugins(target, "ChatPlugin");
 
         // Act
-        FunctionResult actual = await target.InvokeAsync(plugins["ChatPlugin"]["Chat"], new() { [InputParameterName] = prompt });
+        FunctionResult actual = await target.InvokeAsync(plugins["ChatPlugin"]["Chat"], new(prompt));
 
         // Assert
         Assert.Contains(expectedAnswerContains, actual.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
@@ -104,7 +104,7 @@ public sealed class OpenAICompletionTests : IDisposable
             "List the two planets after '{{$input}}', excluding moons, using bullet points.",
             new OpenAIPromptExecutionSettings());
 
-        var result = await func.InvokeAsync(target, new() { [InputParameterName] = "Jupiter" });
+        var result = await func.InvokeAsync(target, new("Jupiter"));
 
         Assert.NotNull(result);
         Assert.Contains("Saturn", result.GetValue<string>(), StringComparison.InvariantCultureIgnoreCase);
@@ -135,7 +135,7 @@ public sealed class OpenAICompletionTests : IDisposable
 
         StringBuilder fullResult = new();
         // Act
-        await foreach (var content in target.InvokeStreamingAsync<StreamingKernelContent>(plugins["ChatPlugin"]["Chat"], new() { [InputParameterName] = prompt }))
+        await foreach (var content in target.InvokeStreamingAsync<StreamingContentBase>(plugins["ChatPlugin"]["Chat"], new(prompt)))
         {
             fullResult.Append(content);
         };
@@ -167,7 +167,7 @@ public sealed class OpenAICompletionTests : IDisposable
         IReadOnlyKernelPluginCollection plugins = TestHelpers.ImportSamplePlugins(target, "ChatPlugin");
 
         // Act
-        FunctionResult actual = await target.InvokeAsync(plugins["ChatPlugin"]["Chat"], new() { [InputParameterName] = prompt });
+        FunctionResult actual = await target.InvokeAsync(plugins["ChatPlugin"]["Chat"], new(prompt));
 
         // Assert
         Assert.Contains(expectedAnswerContains, actual.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
@@ -200,7 +200,7 @@ public sealed class OpenAICompletionTests : IDisposable
         IReadOnlyKernelPluginCollection plugins = TestHelpers.ImportSamplePlugins(target, "SummarizePlugin");
 
         // Act
-        await Assert.ThrowsAsync<HttpOperationException>(() => target.InvokeAsync(plugins["SummarizePlugin"]["Summarize"], new() { [InputParameterName] = prompt }));
+        await Assert.ThrowsAsync<HttpOperationException>(() => target.InvokeAsync(plugins["SummarizePlugin"]["Summarize"], new(prompt)));
 
         // Assert
         Assert.Contains(expectedOutput, this._testOutputHelper.GetLogs(), StringComparison.OrdinalIgnoreCase);
@@ -238,7 +238,7 @@ public sealed class OpenAICompletionTests : IDisposable
         IReadOnlyKernelPluginCollection plugins = TestHelpers.ImportSamplePlugins(target, "SummarizePlugin");
 
         // Act
-        await Assert.ThrowsAsync<HttpOperationException>(() => target.InvokeAsync(plugins["SummarizePlugin"]["Summarize"], new() { [InputParameterName] = prompt }));
+        await Assert.ThrowsAsync<HttpOperationException>(() => target.InvokeAsync(plugins["SummarizePlugin"]["Summarize"], new(prompt)));
 
         // Assert
         Assert.Contains(expectedOutput, this._testOutputHelper.GetLogs(), StringComparison.OrdinalIgnoreCase);
@@ -301,7 +301,7 @@ public sealed class OpenAICompletionTests : IDisposable
         IReadOnlyKernelPluginCollection plugins = TestHelpers.ImportSamplePlugins(target, "SummarizePlugin");
 
         // Act and Assert
-        var ex = await Assert.ThrowsAsync<HttpOperationException>(() => target.InvokeAsync(plugins["SummarizePlugin"]["Summarize"], new() { [InputParameterName] = "Any" }));
+        var ex = await Assert.ThrowsAsync<HttpOperationException>(() => target.InvokeAsync(plugins["SummarizePlugin"]["Summarize"], new("Any")));
 
         Assert.Equal(HttpStatusCode.Unauthorized, ((HttpOperationException)ex).StatusCode);
     }
@@ -326,7 +326,7 @@ public sealed class OpenAICompletionTests : IDisposable
         IReadOnlyKernelPluginCollection plugins = TestHelpers.ImportSamplePlugins(target, "SummarizePlugin");
 
         // Act and Assert
-        var ex = await Assert.ThrowsAsync<HttpOperationException>(() => target.InvokeAsync(plugins["SummarizePlugin"]["Summarize"], new() { [InputParameterName] = "Any" }));
+        var ex = await Assert.ThrowsAsync<HttpOperationException>(() => target.InvokeAsync(plugins["SummarizePlugin"]["Summarize"], new("Any")));
 
         Assert.Equal(HttpStatusCode.Unauthorized, ((HttpOperationException)ex).StatusCode);
     }
@@ -352,7 +352,7 @@ public sealed class OpenAICompletionTests : IDisposable
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<HttpOperationException>(() => plugins["SummarizePlugin"]["Summarize"].InvokeAsync(target, new() { [InputParameterName] = string.Join('.', Enumerable.Range(1, 40000)) }));
+        await Assert.ThrowsAsync<HttpOperationException>(() => plugins["SummarizePlugin"]["Summarize"].InvokeAsync(target, new(string.Join('.', Enumerable.Range(1, 40000)))));
     }
 
     [Theory(Skip = "This test is for manual verification.")]
@@ -378,7 +378,7 @@ public sealed class OpenAICompletionTests : IDisposable
         IReadOnlyKernelPluginCollection plugins = TestHelpers.ImportSamplePlugins(target, "ChatPlugin");
 
         // Act
-        FunctionResult actual = await target.InvokeAsync(plugins["ChatPlugin"]["Chat"], new() { [InputParameterName] = prompt });
+        FunctionResult actual = await target.InvokeAsync(plugins["ChatPlugin"]["Chat"], new(prompt));
 
         // Assert
         Assert.Contains(ExpectedAnswerContains, actual.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
@@ -436,11 +436,12 @@ public sealed class OpenAICompletionTests : IDisposable
         var azurePromptModel = PromptTemplateConfig.FromJson(
             @"{
                 ""name"": ""FishMarket2"",
-                ""execution_settings"": {
-                    ""azure-text-davinci-003"": {
-                        ""max_tokens"": 256
+                ""execution_settings"": [
+                    {
+                        ""max_tokens"": 256,
+                        ""service_id"": ""azure-text-davinci-003""
                     }
-                }
+                ]
             }");
         azurePromptModel.Template = prompt;
 

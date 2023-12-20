@@ -7,7 +7,7 @@ namespace Microsoft.SemanticKernel;
 /// <summary>
 /// Class that contains information about node in prompt.
 /// </summary>
-internal sealed class PromptNode
+internal class PromptNode
 {
     private Dictionary<string, string>? _attributes;
     private List<PromptNode>? _childNodes;

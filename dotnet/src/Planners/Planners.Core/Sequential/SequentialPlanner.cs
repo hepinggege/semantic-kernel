@@ -4,7 +4,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel.AI;
 
 namespace Microsoft.SemanticKernel.Planning;
@@ -50,7 +49,7 @@ public sealed class SequentialPlanner
             });
 
         this._kernel = kernel;
-        this._logger = kernel.LoggerFactory.CreateLogger(this.GetType()) ?? NullLogger.Instance;
+        this._logger = kernel.LoggerFactory.CreateLogger(this.GetType());
     }
 
     /// <summary>Creates a plan for the specified goal.</summary>

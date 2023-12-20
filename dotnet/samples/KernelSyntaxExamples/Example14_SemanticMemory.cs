@@ -3,9 +3,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.SemanticKernel.Connectors.AzureAISearch;
+using Microsoft.SemanticKernel.Connectors.Memory.AzureAISearch;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Memory;
+using Microsoft.SemanticKernel.Plugins.Memory;
 
 /* The files contains two examples about SK Semantic Memory.
  *
@@ -15,6 +16,8 @@ using Microsoft.SemanticKernel.Memory;
  * Semantic Memory allows to store your data like traditional DBs,
  * adding the ability to query it using natural language.
  */
+
+// ReSharper disable once InconsistentNaming
 public static class Example14_SemanticMemory
 {
     private const string MemoryCollectionName = "SKGitHub";

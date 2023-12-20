@@ -6,28 +6,22 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
-/// <summary>
-/// This example demonstrates how to use Azure OpenAI Chat Completion with data.
-/// </summary>
-/// <value>
-/// Set-up instructions:
-/// <para>1. Upload the following content in Azure Blob Storage in a .txt file.</para>
-/// <para>You can follow the steps here: <see href="https://learn.microsoft.com/en-us/azure/ai-services/openai/use-your-data-quickstart"/></para>
-/// <para>
-/// Emily and David, two passionate scientists, met during a research expedition to Antarctica.
-/// Bonded by their love for the natural world and shared curiosity,
-/// they uncovered a groundbreaking phenomenon in glaciology that could
-/// potentially reshape our understanding of climate change.
-/// </para>
-/// 2. Set your secrets:
-/// <para> dotnet user-secrets set "AzureAISearch:Endpoint" "https://... .search.windows.net"</para>
-/// <para> dotnet user-secrets set "AzureAISearch:ApiKey" "{Key from your Search service resource}"</para>
-/// <para> dotnet user-secrets set "AzureAISearch:IndexName" "..."</para>
-/// </value>
+/**
+ * This example shows how to use Azure OpenAI Chat Completion with data.
+ * More information: <see href="https://learn.microsoft.com/en-us/azure/ai-services/openai/use-your-data-quickstart"/>
+ */
+// ReSharper disable once InconsistentNaming
 public static class Example54_AzureChatCompletionWithData
 {
     public static async Task RunAsync()
     {
+        // Uploaded content in Azure Blob Storage in .txt file:
+
+        // Emily and David, two passionate scientists, met during a research expedition to Antarctica.
+        // Bonded by their love for the natural world and shared curiosity,
+        // they uncovered a groundbreaking phenomenon in glaciology that could
+        // potentially reshape our understanding of climate change.
+
         await ExampleWithChatCompletionAsync();
         await ExampleWithKernelAsync();
     }
@@ -95,7 +89,7 @@ public static class Example54_AzureChatCompletionWithData
         var function = kernel.CreateFunctionFromPrompt("Question: {{$input}}");
 
         // First question without previous context based on uploaded content.
-        var response = await kernel.InvokeAsync(function, new() { ["input"] = ask });
+        var response = await kernel.InvokeAsync(function, new(ask));
 
         // Output
         // Ask: How did Emily and David meet?
@@ -106,7 +100,7 @@ public static class Example54_AzureChatCompletionWithData
 
         // Second question based on uploaded content.
         ask = "What are Emily and David studying?";
-        response = await kernel.InvokeAsync(function, new() { ["input"] = ask });
+        response = await kernel.InvokeAsync(function, new(ask));
 
         // Output
         // Ask: What are Emily and David studying?

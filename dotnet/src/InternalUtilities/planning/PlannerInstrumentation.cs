@@ -3,7 +3,6 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -72,8 +71,8 @@ internal static partial class PlannerInstrumentation
 
     // <summary>Invokes the supplied <paramref name="InvokePlanAsync"/> delegate, surrounded by logging and metrics.</summary>
     public static async Task<TPlanResult> InvokePlanAsync<TPlan, TPlanInput, TPlanResult>(
-        Func<TPlan, Kernel, TPlanInput?, CancellationToken, Task<TPlanResult>> InvokePlanAsync,
-        TPlan plan, Kernel kernel, TPlanInput? input, ILogger logger, CancellationToken cancellationToken)
+        Func<TPlan, Kernel, TPlanInput, CancellationToken, Task<TPlanResult>> InvokePlanAsync,
+        TPlan plan, Kernel kernel, TPlanInput input, ILogger logger, CancellationToken cancellationToken)
         where TPlan : class
         where TPlanInput : class
         where TPlanResult : class
@@ -110,7 +109,6 @@ internal static partial class PlannerInstrumentation
     }
 
     #region CreatePlan Logging helpers
-#pragma warning disable SYSLIB1006 // Multiple logging methods cannot use the same event id within a class
     [LoggerMessage(
         EventId = 0,
         Level = LogLevel.Information,
@@ -118,46 +116,31 @@ internal static partial class PlannerInstrumentation
     static partial void LogCreatePlanStarted(this ILogger logger);
 
     [LoggerMessage(
-        EventId = 0,
+        EventId = 1,
         Level = LogLevel.Trace, // Sensitive data, logging as trace, disabled by default
         Message = "Goal: {Goal}")]
     static partial void LogGoal(this ILogger logger, string goal);
 
     [LoggerMessage(
-        EventId = 0,
+        EventId = 2,
         Level = LogLevel.Information,
         Message = "Plan created.")]
     static partial void LogPlanCreated(this ILogger logger);
 
-    private static readonly Action<ILogger, string, Exception?> s_logPlan =
-        LoggerMessage.Define<string>(
-            logLevel: LogLevel.Trace,   // Sensitive data, logging as trace, disabled by default
-            eventId: 0,
-            "Plan:\n{Plan}");
-    private static void LogPlan(this ILogger logger, object plan)
-    {
-        if (logger.IsEnabled(LogLevel.Trace))
-        {
-            try
-            {
-                var jsonString = JsonSerializer.Serialize(plan);
-                s_logPlan(logger, jsonString, null);
-            }
-            catch (NotSupportedException ex)
-            {
-                s_logPlan(logger, "Failed to serialize plan to Json", ex);
-            }
-        }
-    }
+    [LoggerMessage(
+        EventId = 3,
+        Level = LogLevel.Trace, // Sensitive data, logging as trace, disabled by default
+        Message = "Plan:\n{Plan}")]
+    static partial void LogPlan(this ILogger logger, object plan);
 
     [LoggerMessage(
-        EventId = 0,
+        EventId = 4,
         Level = LogLevel.Error,
         Message = "Plan creation failed. Error: {Message}")]
     static partial void LogCreatePlanError(this ILogger logger, Exception exception, string message);
 
     [LoggerMessage(
-        EventId = 0,
+        EventId = 5,
         Level = LogLevel.Information,
         Message = "Plan creation duration: {Duration}s.")]
     static partial void LogCreatePlanDuration(this ILogger logger, double duration);
@@ -166,53 +149,34 @@ internal static partial class PlannerInstrumentation
 
     #region InvokePlan Logging helpers
     [LoggerMessage(
-        EventId = 0,
+        EventId = 6,
         Level = LogLevel.Information,
         Message = "Plan execution started.")]
     static partial void LogInvokePlanStarted(this ILogger logger);
 
     [LoggerMessage(
-        EventId = 0,
+        EventId = 7,
         Level = LogLevel.Information,
         Message = "Plan executed successfully.")]
     static partial void LogInvokePlanSuccess(this ILogger logger);
 
-    private static readonly Action<ILogger, string, Exception?> s_logPlanResult =
-        LoggerMessage.Define<string>(
-            logLevel: LogLevel.Trace,   // Sensitive data, logging as trace, disabled by default
-            eventId: 0,
-            "Plan result: {Result}");
-
-    private static void LogPlanResult(this ILogger logger, object planResult)
-    {
-        if (logger.IsEnabled(LogLevel.Trace))
-        {
-            try
-            {
-                var jsonString = planResult.GetType() == typeof(string)
-                    ? planResult.ToString()
-                    : JsonSerializer.Serialize(planResult);
-                s_logPlanResult(logger, jsonString, null);
-            }
-            catch (NotSupportedException ex)
-            {
-                s_logPlanResult(logger, "Failed to serialize plan result to Json", ex);
-            }
-        }
-    }
+    [LoggerMessage(
+        EventId = 8,
+        Level = LogLevel.Trace, // Sensitive data, logging as trace, disabled by default
+        Message = "Plan result: {PlanResult}")]
+    static partial void LogPlanResult(this ILogger logger, object planResult);
 
     [LoggerMessage(
-        EventId = 0,
+        EventId = 9,
         Level = LogLevel.Error,
         Message = "Plan creation failed. Error: {Message}")]
     static partial void LogInvokePlanError(this ILogger logger, Exception exception, string message);
 
     [LoggerMessage(
-        EventId = 0,
+        EventId = 10,
         Level = LogLevel.Information,
         Message = "Plan creation duration: {Duration}s.")]
     static partial void LogInvokePlanDuration(this ILogger logger, double duration);
 
-#pragma warning restore SYSLIB1006 // Multiple logging methods cannot use the same event id within a class
     #endregion
 }

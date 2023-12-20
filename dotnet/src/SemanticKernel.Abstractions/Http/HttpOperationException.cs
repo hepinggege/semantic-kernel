@@ -3,7 +3,7 @@
 using System;
 using System.Net;
 
-namespace Microsoft.SemanticKernel;
+namespace Microsoft.SemanticKernel.Http;
 
 /// <summary>
 /// Represents an exception specific to HTTP operations.

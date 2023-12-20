@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DuckDB.NET.Data;
 
-namespace Microsoft.SemanticKernel.Connectors.DuckDB;
+namespace Microsoft.SemanticKernel.Connectors.Memory.DuckDB;
 
 internal struct DatabaseEntry
 {

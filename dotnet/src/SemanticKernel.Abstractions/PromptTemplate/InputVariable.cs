@@ -1,65 +1,41 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.SemanticKernel;
 
 /// <summary>
-/// Represents an input variable for prompt functions.
+/// Input variable for prompt functions.
 /// </summary>
 public sealed class InputVariable
 {
-    /// <summary>The name of the variable.</summary>
-    private string _name = string.Empty;
-    /// <summary>The description of the variable.</summary>
-    private string _description = string.Empty;
-
     /// <summary>
-    /// Gets or sets the name of the variable.
+    /// Name of the variable to pass to the prompt function.
+    /// e.g. when using "{{$input}}" the name is "input", when using "{{$style}}" the name is "style", etc.
     /// </summary>
-    /// <remarks>
-    /// As an example, when using "{{$style}}", the name is "style".
-    /// </remarks>
     [JsonPropertyName("name")]
-    public string Name
-    {
-        get => this._name;
-        set
-        {
-            Verify.NotNull(value);
-            this._name = value;
-        }
-    }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets a description of the variable.
+    /// Variable description for UI applications and planners. Localization is not supported here.
     /// </summary>
     [JsonPropertyName("description")]
-    [AllowNull]
-    public string Description
-    {
-        get => this._description;
-        set => this._description = value ?? string.Empty;
-    }
+    public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets a default value for the variable.
+    /// Default value when nothing is provided.
     /// </summary>
     [JsonPropertyName("default")]
-    public object? Default { get; set; }
+    public string Default { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets whether the variable is considered required (rather than optional).
+    /// True to indicate the input variable is required. True by default.
     /// </summary>
-    /// <remarks>
-    /// The default is true.
-    /// </remarks>
     [JsonPropertyName("is_required")]
     public bool IsRequired { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets JSON Schema describing this variable.
+    /// JsonSchema describing this variable.
     /// </summary>
     /// <remarks>
     /// This string will be deserialized into an instance of <see cref="KernelJsonSchema"/>.

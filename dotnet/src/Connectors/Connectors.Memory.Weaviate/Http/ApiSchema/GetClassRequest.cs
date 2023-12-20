@@ -3,7 +3,7 @@
 using System.Net.Http;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.SemanticKernel.Connectors.Weaviate;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Weaviate.Http.ApiSchema;
 
 internal sealed class GetClassRequest
 {

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.TextGeneration;
 using Xunit;
 
 namespace SemanticKernel.UnitTests.Functions;
@@ -29,7 +30,7 @@ public class FunctionResultTests
     {
         object resultValue = new();
         CultureInfo culture = new("fr-FR");
-        var metadata = new Dictionary<string, object?>();
+        IDictionary<string, object?> metadata = new Dictionary<string, object?>();
 
         FunctionResult result = new(s_nopFunction, resultValue, culture);
         Assert.Same(resultValue, result.GetValue<object>());
@@ -111,7 +112,7 @@ public class FunctionResultTests
     }
 
     [Fact]
-    public void GetValueWhenValueIsKernelContentGenericStringShouldReturnContentBaseToString()
+    public void GetValueWhenValueIsContentBaseGenericStringShouldReturnContentBaseToString()
     {
         // Arrange
         string expectedValue = Guid.NewGuid().ToString();
@@ -122,7 +123,7 @@ public class FunctionResultTests
     }
 
     [Fact]
-    public void GetValueWhenValueIsKernelContentGenericTypeMatchShouldReturn()
+    public void GetValueWhenValueIsContentBaseGenericTypeMatchShouldReturn()
     {
         // Arrange
         string expectedValue = Guid.NewGuid().ToString();
@@ -132,6 +133,6 @@ public class FunctionResultTests
         // Act and Assert
 
         Assert.Equal(valueType, target.GetValue<TextContent>());
-        Assert.Equal(valueType, target.GetValue<KernelContent>());
+        Assert.Equal(valueType, target.GetValue<ContentBase>());
     }
 }

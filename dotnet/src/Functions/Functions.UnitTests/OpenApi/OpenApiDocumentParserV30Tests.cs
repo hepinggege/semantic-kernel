@@ -9,7 +9,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Plugins.OpenApi;
+using Microsoft.SemanticKernel.Plugins.OpenApi.Model;
+using Microsoft.SemanticKernel.Plugins.OpenApi.OpenApi;
 using SemanticKernel.Functions.UnitTests.OpenApi.TestPlugins;
 using Xunit;
 
@@ -108,7 +109,7 @@ public sealed class OpenApiDocumentParserV30Tests : IDisposable
         Assert.Equal(HttpMethod.Put, putOperation.Method);
         Assert.Equal("/secrets/{secret-name}", putOperation.Path);
 
-        var parameters = putOperation.GetParameters(addPayloadParamsFromMetadata: false);
+        var parameters = putOperation.GetParameters();
         Assert.NotNull(parameters);
         Assert.True(parameters.Count >= 5);
 

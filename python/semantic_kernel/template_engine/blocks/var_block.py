@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-import logging
+from logging import Logger
 from re import match as re_match
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import pydantic as pdt
 
@@ -11,23 +11,16 @@ from semantic_kernel.template_engine.blocks.block import Block
 from semantic_kernel.template_engine.blocks.block_types import BlockTypes
 from semantic_kernel.template_engine.blocks.symbols import Symbols
 
-logger: logging.Logger = logging.getLogger(__name__)
-
 
 class VarBlock(Block):
     _name: str = pdt.PrivateAttr()
 
-    def __init__(self, content: Optional[str] = None, log: Optional[Any] = None):
-        super().__init__(content=content and content.strip())
-
-        if log:
-            logger.warning(
-                "The `log` parameter is deprecated. Please use the `logging` module instead."
-            )
+    def __init__(self, content: Optional[str] = None, log: Optional[Logger] = None):
+        super().__init__(content=content and content.strip(), log=log)
 
         if len(self.content) < 2:
             err = "The variable name is empty"
-            logger.error(err)
+            self.log.error(err)
             self._name = ""
             return
 
@@ -51,17 +44,17 @@ class VarBlock(Block):
                 f"A variable must start with the symbol {Symbols.VAR_PREFIX} "
                 "and have a name"
             )
-            logger.error(error_msg)
+            self.log.error(error_msg)
             return False, error_msg
 
         if self.content[0] != Symbols.VAR_PREFIX:
             error_msg = f"A variable must start with the symbol {Symbols.VAR_PREFIX}"
-            logger.error(error_msg)
+            self.log.error(error_msg)
             return False, error_msg
 
         if len(self.content) < 2:
             error_msg = "The variable name is empty"
-            logger.error(error_msg)
+            self.log.error(error_msg)
             return False, error_msg
 
         if not re_match(r"^[a-zA-Z0-9_]*$", self.name):
@@ -69,7 +62,7 @@ class VarBlock(Block):
                 f"The variable name '{self.name}' contains invalid characters. "
                 "Only alphanumeric chars and underscore are allowed."
             )
-            logger.error(error_msg)
+            self.log.error(error_msg)
             return False, error_msg
 
         return True, ""
@@ -80,11 +73,11 @@ class VarBlock(Block):
 
         if not self.name:
             error_msg = "Variable rendering failed, the variable name is empty"
-            logger.error(error_msg)
+            self.log.error(error_msg)
             raise ValueError(error_msg)
 
         value = variables.get(self.name, None)
         if not value:
-            logger.warning(f"Variable `{Symbols.VAR_PREFIX}{self.name}` not found")
+            self.log.warning(f"Variable `{Symbols.VAR_PREFIX}{self.name}` not found")
 
         return value or ""

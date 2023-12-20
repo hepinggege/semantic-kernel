@@ -8,7 +8,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+
+#pragma warning disable CA1508 // Avoid dead conditional code
 
 namespace Microsoft.SemanticKernel;
 
@@ -18,10 +19,10 @@ namespace Microsoft.SemanticKernel;
 public abstract class KernelFunction
 {
     /// <summary>The measurement tag name for the function name.</summary>
-    private protected const string MeasurementFunctionTagName = "semantic_kernel.function.name";
+    protected const string MeasurementFunctionTagName = "semantic_kernel.function.name";
 
     /// <summary>The measurement tag name for the function error type.</summary>
-    private protected const string MeasurementErrorTagName = "error.type";
+    protected const string MeasurementErrorTagName = "error.type";
 
     /// <summary><see cref="ActivitySource"/> for function-related activities.</summary>
     private static readonly ActivitySource s_activitySource = new("Microsoft.SemanticKernel");
@@ -73,7 +74,7 @@ public abstract class KernelFunction
     /// <summary>
     /// Gets the prompt execution settings.
     /// </summary>
-    internal IReadOnlyDictionary<string, PromptExecutionSettings>? ExecutionSettings { get; }
+    internal List<PromptExecutionSettings>? ExecutionSettings { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="KernelFunction"/> class.
@@ -86,7 +87,7 @@ public abstract class KernelFunction
     /// The <see cref="PromptExecutionSettings"/> to use with the function. These will apply unless they've been
     /// overridden by settings passed into the invocation of the function.
     /// </param>
-    internal KernelFunction(string name, string description, IReadOnlyList<KernelParameterMetadata> parameters, KernelReturnParameterMetadata? returnParameter = null, Dictionary<string, PromptExecutionSettings>? executionSettings = null)
+    internal KernelFunction(string name, string description, IReadOnlyList<KernelParameterMetadata> parameters, KernelReturnParameterMetadata? returnParameter = null, List<PromptExecutionSettings>? executionSettings = null)
     {
         Verify.NotNull(name);
         Verify.ParametersUniqueness(parameters);
@@ -95,7 +96,7 @@ public abstract class KernelFunction
         {
             Description = description,
             Parameters = parameters,
-            ReturnParameter = returnParameter ?? KernelReturnParameterMetadata.Empty,
+            ReturnParameter = returnParameter ?? new()
         };
         this.ExecutionSettings = executionSettings;
     }
@@ -117,12 +118,11 @@ public abstract class KernelFunction
         Verify.NotNull(kernel);
 
         using var activity = s_activitySource.StartActivity(this.Name);
-        ILogger logger = kernel.LoggerFactory.CreateLogger(this.Name) ?? NullLogger.Instance;
+        ILogger logger = kernel.LoggerFactory.CreateLogger(this.Name);
 
         // Ensure arguments are initialized.
         arguments ??= new KernelArguments();
-        logger.LogFunctionInvoking(this.Name);
-        logger.LogFunctionArguments(arguments);
+        logger.LogFunctionInvokingWithArguments(this.Name, arguments);
 
         TagList tags = new() { { MeasurementFunctionTagName, this.Name } };
         long startingTimestamp = Stopwatch.GetTimestamp();
@@ -133,7 +133,8 @@ public abstract class KernelFunction
             cancellationToken.ThrowIfCancellationRequested();
 
             // Invoke pre-invocation event handler. If it requests cancellation, throw.
-            if (kernel.OnFunctionInvoking(this, arguments)?.Cancel is true)
+            var invokingEventArgs = kernel.OnFunctionInvoking(this, arguments);
+            if (invokingEventArgs?.Cancel is true)
             {
                 throw new OperationCanceledException($"A {nameof(Kernel)}.{nameof(Kernel.FunctionInvoking)} event handler requested cancellation before function invocation.");
             }
@@ -154,8 +155,7 @@ public abstract class KernelFunction
                 throw new OperationCanceledException($"A {nameof(Kernel)}.{nameof(Kernel.FunctionInvoked)} event handler requested cancellation after function invocation.");
             }
 
-            logger.LogFunctionInvokedSuccess(this.Name);
-            logger.LogFunctionResultValue(functionResult.Value);
+            logger.LogFunctionInvokedSuccess(functionResult.Value);
 
             return functionResult;
         }
@@ -204,11 +204,11 @@ public abstract class KernelFunction
     /// The function will not be invoked until an enumerator is retrieved from the returned <see cref="IAsyncEnumerable{T}"/>
     /// and its iteration initiated via an initial call to <see cref="IAsyncEnumerator{T}.MoveNextAsync"/>.
     /// </remarks>
-    public IAsyncEnumerable<StreamingKernelContent> InvokeStreamingAsync(
+    public IAsyncEnumerable<StreamingContentBase> InvokeStreamingAsync(
         Kernel kernel,
         KernelArguments? arguments = null,
         CancellationToken cancellationToken = default) =>
-        this.InvokeStreamingAsync<StreamingKernelContent>(kernel, arguments, cancellationToken);
+        this.InvokeStreamingAsync<StreamingContentBase>(kernel, arguments, cancellationToken);
 
     /// <summary>
     /// Invokes the <see cref="KernelFunction"/> and streams its results.
@@ -231,11 +231,10 @@ public abstract class KernelFunction
         Verify.NotNull(kernel);
 
         using var activity = s_activitySource.StartActivity(this.Name);
-        ILogger logger = kernel.LoggerFactory.CreateLogger(this.Name) ?? NullLogger.Instance;
+        ILogger logger = kernel.LoggerFactory.CreateLogger(this.Name);
 
         arguments ??= new KernelArguments();
-        logger.LogFunctionStreamingInvoking(this.Name);
-        logger.LogFunctionArguments(arguments);
+        logger.LogFunctionStreamingInvokingWithArguments(this.Name, arguments);
 
         TagList tags = new() { { MeasurementFunctionTagName, this.Name } };
         long startingTimestamp = Stopwatch.GetTimestamp();

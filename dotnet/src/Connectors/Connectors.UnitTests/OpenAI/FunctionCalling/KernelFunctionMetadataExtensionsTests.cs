@@ -21,11 +21,7 @@ public sealed class KernelFunctionMetadataExtensionsTests
         {
             PluginName = "bar",
             Description = "baz",
-            ReturnParameter = new KernelReturnParameterMetadata
-            {
-                Description = "retDesc",
-                Schema = KernelJsonSchema.Parse("{\"type\": \"object\" }"),
-            }
+            ReturnParameter = new KernelReturnParameterMetadata { Description = "retDesc", Schema = KernelJsonSchema.Parse("\"schema\"") },
         };
 
         // Act
@@ -36,11 +32,8 @@ public sealed class KernelFunctionMetadataExtensionsTests
         Assert.Equal(sut.PluginName, result.PluginName);
         Assert.Equal(sut.Description, result.Description);
         Assert.Equal($"{sut.PluginName}_{sut.Name}", result.FullyQualifiedName);
-
         Assert.NotNull(result.ReturnParameter);
-        Assert.Equal("retDesc", result.ReturnParameter.Description);
-        Assert.Equivalent(KernelJsonSchema.Parse("{\"type\": \"object\" }"), result.ReturnParameter.Schema);
-        Assert.Null(result.ReturnParameter.ParameterType);
+        Assert.Equivalent(new OpenAIFunctionReturnParameter { Description = "retDesc", Schema = KernelJsonSchema.Parse("\"schema\"") }, result.ReturnParameter);
     }
 
     [Fact]
@@ -51,11 +44,7 @@ public sealed class KernelFunctionMetadataExtensionsTests
         {
             PluginName = string.Empty,
             Description = "baz",
-            ReturnParameter = new KernelReturnParameterMetadata
-            {
-                Description = "retDesc",
-                Schema = KernelJsonSchema.Parse("{\"type\": \"object\" }"),
-            }
+            ReturnParameter = new KernelReturnParameterMetadata { Description = "retDesc", Schema = KernelJsonSchema.Parse("\"schema\"") },
         };
 
         // Act
@@ -66,11 +55,8 @@ public sealed class KernelFunctionMetadataExtensionsTests
         Assert.Equal(sut.PluginName, result.PluginName);
         Assert.Equal(sut.Description, result.Description);
         Assert.Equal(sut.Name, result.FullyQualifiedName);
-
         Assert.NotNull(result.ReturnParameter);
-        Assert.Equal("retDesc", result.ReturnParameter.Description);
-        Assert.Equivalent(KernelJsonSchema.Parse("{\"type\": \"object\" }"), result.ReturnParameter.Schema);
-        Assert.Null(result.ReturnParameter.ParameterType);
+        Assert.Equivalent(new OpenAIFunctionReturnParameter { Description = "retDesc", Schema = KernelJsonSchema.Parse("\"schema\"") }, result.ReturnParameter);
     }
 
     [Theory]
@@ -93,16 +79,12 @@ public sealed class KernelFunctionMetadataExtensionsTests
             PluginName = "bar",
             Description = "baz",
             Parameters = new[] { param1 },
-            ReturnParameter = new KernelReturnParameterMetadata
-            {
-                Description = "retDesc",
-                Schema = KernelJsonSchema.Parse("{\"type\": \"object\" }"),
-            }
+            ReturnParameter = new KernelReturnParameterMetadata { Description = "retDesc", Schema = KernelJsonSchema.Parse("\"schema\"") },
         };
 
         // Act
         var result = sut.ToOpenAIFunction();
-        var outputParam = result.Parameters![0];
+        var outputParam = result.Parameters.First();
 
         // Assert
         Assert.Equal(param1.Name, outputParam.Name);
@@ -110,44 +92,35 @@ public sealed class KernelFunctionMetadataExtensionsTests
         Assert.Equal(param1.IsRequired, outputParam.IsRequired);
         Assert.NotNull(outputParam.Schema);
         Assert.Equal("integer", outputParam.Schema.RootElement.GetProperty("type").GetString());
-
-        Assert.NotNull(result.ReturnParameter);
-        Assert.Equal("retDesc", result.ReturnParameter.Description);
-        Assert.Equivalent(KernelJsonSchema.Parse("{\"type\": \"object\" }"), result.ReturnParameter.Schema);
-        Assert.Null(result.ReturnParameter.ParameterType);
+        Assert.Equivalent(new OpenAIFunctionReturnParameter { Description = "retDesc", Schema = KernelJsonSchema.Parse("\"schema\"") }, result.ReturnParameter);
     }
 
     [Fact]
     public void ItCanConvertToOpenAIFunctionWithParameterNoType()
     {
         // Arrange
-        var param1 = new KernelParameterMetadata("param1") { Description = "This is param1" };
+        var param1 = new KernelParameterMetadata("param1")
+        {
+            Description = "This is param1"
+        };
 
         var sut = new KernelFunctionMetadata("foo")
         {
             PluginName = "bar",
             Description = "baz",
             Parameters = new[] { param1 },
-            ReturnParameter = new KernelReturnParameterMetadata
-            {
-                Description = "retDesc",
-                Schema = KernelJsonSchema.Parse("{\"type\": \"object\" }"),
-            }
+            ReturnParameter = new KernelReturnParameterMetadata { Description = "retDesc", Schema = KernelJsonSchema.Parse("\"schema\"") },
         };
 
         // Act
         var result = sut.ToOpenAIFunction();
-        var outputParam = result.Parameters![0];
+        var outputParam = result.Parameters.First();
 
         // Assert
         Assert.Equal(param1.Name, outputParam.Name);
         Assert.Equal(param1.Description, outputParam.Description);
         Assert.Equal(param1.IsRequired, outputParam.IsRequired);
-
-        Assert.NotNull(result.ReturnParameter);
-        Assert.Equal("retDesc", result.ReturnParameter.Description);
-        Assert.Equivalent(KernelJsonSchema.Parse("{\"type\": \"object\" }"), result.ReturnParameter.Schema);
-        Assert.Null(result.ReturnParameter.ParameterType);
+        Assert.Equivalent(new OpenAIFunctionReturnParameter { Description = "retDesc", Schema = KernelJsonSchema.Parse("\"schema\"") }, result.ReturnParameter);
     }
 
     [Fact]
@@ -169,7 +142,7 @@ public sealed class KernelFunctionMetadataExtensionsTests
 
         // Act
         var result = sut.ToOpenAIFunction();
-        var outputParam = result.Parameters![0];
+        var outputParam = result.Parameters.First();
 
         // Assert
         Assert.Equal(param1.Name, outputParam.Name);

@@ -24,18 +24,19 @@ using Microsoft.SemanticKernel.TextGeneration;
  *
  * Refer to example 33 for streaming chat completion.
  */
+// ReSharper disable once InconsistentNaming
 public static class Example16_CustomLLM
 {
     public static async Task RunAsync()
     {
-        await CustomTextGenerationWithKernelFunctionAsync();
+        await CustomTextGenerationWithSKFunctionAsync();
         await CustomTextGenerationAsync();
         await CustomTextGenerationStreamAsync();
     }
 
-    private static async Task CustomTextGenerationWithKernelFunctionAsync()
+    private static async Task CustomTextGenerationWithSKFunctionAsync()
     {
-        Console.WriteLine("\n======== Custom LLM - Text Completion - KernelFunction ========");
+        Console.WriteLine("\n======== Custom LLM - Text Completion - SKFunction ========");
 
         IKernelBuilder builder = Kernel.CreateBuilder();
         // Add your text generation service as a singleton instance
@@ -49,7 +50,7 @@ public static class Example16_CustomLLM
 
         const string Input = "Why AI is awesome";
         Console.WriteLine($"Function input: {Input}\n");
-        var result = await paragraphWritingFunction.InvokeAsync(kernel, new() { ["input"] = Input });
+        var result = await paragraphWritingFunction.InvokeAsync(kernel, new(Input));
 
         Console.WriteLine(result);
     }

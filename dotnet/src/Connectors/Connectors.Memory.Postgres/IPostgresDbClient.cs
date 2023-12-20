@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Pgvector;
 
-namespace Microsoft.SemanticKernel.Connectors.Postgres;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Postgres;
 
 /// <summary>
 /// Interface for client managing postgres database operations.

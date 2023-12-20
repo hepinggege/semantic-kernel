@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using Microsoft.SemanticKernel.Http;
+using Microsoft.SemanticKernel.Plugins.OpenApi.Authentication;
 
 namespace Microsoft.SemanticKernel.Plugins.OpenApi;
 
@@ -78,16 +79,16 @@ public class OpenApiFunctionExecutionParameters
         HttpClient? httpClient = null,
         AuthenticateRequestAsyncCallback? authCallback = null,
         Uri? serverUrlOverride = null,
-        string? userAgent = null,
+        string userAgent = HttpHeaderValues.UserAgent,
         bool ignoreNonCompliantErrors = false,
-        bool enableDynamicOperationPayload = true,
+        bool enableDynamicOperationPayload = false,
         bool enablePayloadNamespacing = false,
         IList<string>? operationsToExclude = null)
     {
         this.HttpClient = httpClient;
         this.AuthCallback = authCallback;
         this.ServerUrlOverride = serverUrlOverride;
-        this.UserAgent = userAgent ?? HttpHeaderValues.UserAgent;
+        this.UserAgent = userAgent;
         this.IgnoreNonCompliantErrors = ignoreNonCompliantErrors;
         this.EnableDynamicPayload = enableDynamicOperationPayload;
         this.EnablePayloadNamespacing = enablePayloadNamespacing;

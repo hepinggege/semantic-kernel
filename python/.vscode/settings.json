@@ -1,36 +1,22 @@
 {
     "python.analysis.extraPaths": [
-        "./semantic_kernel"
+        "./src"
     ],
     "explorer.compactFolders": false,
     "prettier.enable": true,
     "editor.formatOnType": true,
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
-    "editor.defaultFormatter": "charliermarsh.ruff",
-    "notebook.output.textLineLimit": 500,
-    "cSpell.languageSettings": [
-        {
-            "languageId": "py",
-            "allowCompoundWords": true,
-            "locale": "en-US"
-        }
+    "python.formatting.provider": "black",
+    "python.formatting.autopep8Args": [
+        "--max-line-length=160"
     ],
+    "notebook.output.textLineLimit": 500,
     "cSpell.words": [
         "aeiou",
         "nopep",
         "OPENAI",
         "skfunction"
-    ],
-    "cSpell.patterns": [
-        {
-            "name": "import",
-            "pattern": "import [a-zA-Z0-9_]+"
-        },
-        {
-            "name": "from import",
-            "pattern": "from [a-zA-Z0-9_]+ import [a-zA-Z0-9_]+"
-        }
     ],
     "python.testing.pytestArgs": [
         "tests"
@@ -43,17 +29,4 @@
         "run",
         "pytest"
     ],
-    "[python]": {
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "explicit",
-            "source.fixAll": "explicit"
-        },
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "charliermarsh.ruff",
-    },
-    "notebook.formatOnSave.enabled": true,
-    "notebook.codeActionsOnSave": {
-        "source.fixAll": true,
-        "source.organizeImports": true
-    }
 }

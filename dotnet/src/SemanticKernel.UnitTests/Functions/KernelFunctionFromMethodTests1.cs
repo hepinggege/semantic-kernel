@@ -15,7 +15,6 @@ namespace SemanticKernel.UnitTests.Functions;
 
 public sealed class KernelFunctionFromMethodTests1
 {
-    private const string InputParameterName = "input";
     private static readonly KernelFunction s_nopFunction = KernelFunctionFactory.CreateFromMethod(() => { });
 
     private readonly Kernel _kernel;
@@ -236,7 +235,7 @@ public sealed class KernelFunctionFromMethodTests1
             s_actual = s_expected + input;
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = ".blah" };
+        var arguments = new KernelArguments(".blah");
 
         // Act
         Action<string> method = Test;
@@ -264,7 +263,7 @@ public sealed class KernelFunctionFromMethodTests1
             return input;
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = "foo-bar" };
+        var arguments = new KernelArguments("foo-bar");
 
         // Act
         Func<string, string> method = Test;
@@ -291,7 +290,7 @@ public sealed class KernelFunctionFromMethodTests1
             return Task.FromResult("hello there");
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = string.Empty };
+        var arguments = new KernelArguments(string.Empty);
 
         // Act
         Func<string, Task<string>> method = Test;
@@ -344,7 +343,7 @@ public sealed class KernelFunctionFromMethodTests1
             return "new data";
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = s_expected };
+        var arguments = new KernelArguments(s_expected);
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(Test, loggerFactory: this._logger.Object);
@@ -368,7 +367,7 @@ public sealed class KernelFunctionFromMethodTests1
             return Task.FromResult("new data");
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = s_expected };
+        var arguments = new KernelArguments(s_expected);
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(Test, loggerFactory: this._logger.Object);
@@ -394,7 +393,7 @@ public sealed class KernelFunctionFromMethodTests1
             return new ValueTask();
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = "test" };
+        var arguments = new KernelArguments("test");
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(Test, loggerFactory: this._logger.Object);
@@ -418,7 +417,7 @@ public sealed class KernelFunctionFromMethodTests1
             return Task.CompletedTask;
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = string.Empty };
+        var arguments = new KernelArguments(string.Empty);
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(TestAsync, loggerFactory: this._logger.Object);
@@ -442,7 +441,7 @@ public sealed class KernelFunctionFromMethodTests1
             return default;
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = string.Empty };
+        var arguments = new KernelArguments(string.Empty);
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(TestAsync, loggerFactory: this._logger.Object);
@@ -494,7 +493,7 @@ public sealed class KernelFunctionFromMethodTests1
             return Task.CompletedTask;
         }
 
-        var arguments = new KernelArguments() { [InputParameterName] = "x y z" };
+        var arguments = new KernelArguments("x y z");
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(TestAsync, loggerFactory: this._logger.Object);
@@ -537,7 +536,7 @@ public sealed class KernelFunctionFromMethodTests1
     {
         static string Test(string input) => "Result: " + input;
 
-        var arguments = new KernelArguments() { [InputParameterName] = "input value" };
+        var arguments = new KernelArguments("input value");
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(Test);
@@ -551,15 +550,47 @@ public sealed class KernelFunctionFromMethodTests1
     }
 
     [Fact]
+    public async Task ItSupportsUsingNonNamedInputValueAsync()
+    {
+        static string Test(string other) => "Result: " + other;
+
+        var arguments = new KernelArguments("input value");
+
+        // Act
+        var function = KernelFunctionFactory.CreateFromMethod(Test);
+        Assert.NotNull(function);
+
+        FunctionResult result = await function.InvokeAsync(this._kernel, arguments);
+
+        // Assert
+        Assert.Equal("Result: input value", result.GetValue<string>());
+        Assert.Equal("Result: input value", result.ToString());
+    }
+
+    [Fact]
+    public async Task ItSupportsUsingNonNamedInputValueEvenWhenThereAreMultipleParametersAsync()
+    {
+        static string Test(int something, long orother) => "Result: " + (something + orother);
+
+        var arguments = new KernelArguments("42") { ["orother"] = 8 };
+
+        // Act
+        var function = KernelFunctionFactory.CreateFromMethod(Test);
+        Assert.NotNull(function);
+
+        FunctionResult result = await function.InvokeAsync(this._kernel, arguments);
+
+        // Assert
+        Assert.Equal("Result: 50", result.GetValue<string>());
+        Assert.Equal("Result: 50", result.ToString());
+    }
+
+    [Fact]
     public async Task ItSupportsPreferringNamedValueOverInputAsync()
     {
         static string Test(string other) => "Result: " + other;
 
-        var arguments = new KernelArguments()
-        {
-            [InputParameterName] = "input value",
-            ["other"] = "other value"
-        };
+        var arguments = new KernelArguments("input value") { ["other"] = "other value" };
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(Test);
@@ -577,11 +608,7 @@ public sealed class KernelFunctionFromMethodTests1
     {
         static string Test([Description("description")] string input) => "Result: " + input;
 
-        var arguments = new KernelArguments()
-        {
-            [InputParameterName] = "input value",
-            ["other"] = "other value"
-        };
+        var arguments = new KernelArguments("input value") { ["other"] = "other value" };
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(Test);
@@ -599,7 +626,7 @@ public sealed class KernelFunctionFromMethodTests1
     {
         static string Test(string? input = null, string? other = null) => "Result: " + (other is null);
 
-        var arguments = new KernelArguments() { [InputParameterName] = "input value" };
+        var arguments = new KernelArguments("input value");
 
         // Act
         var function = KernelFunctionFactory.CreateFromMethod(Test);
@@ -760,7 +787,7 @@ public sealed class KernelFunctionFromMethodTests1
     public async Task ItSupportsConvertingArgumentsFromStringToManyTypesAsync()
     {
         // Arrange
-        var arguments = new KernelArguments() { [InputParameterName] = "1" };
+        var arguments = new KernelArguments("1");
 
         async Task AssertResult(Delegate d, object? expected, string? expectedString)
         {
@@ -789,7 +816,7 @@ public sealed class KernelFunctionFromMethodTests1
         await AssertResult((TimeSpan input) => TimeSpan.FromTicks(input.Ticks * 2), TimeSpan.FromDays(2), "2.00:00:00");
         await AssertResult((TimeSpan? input) => (int?)null, null, "");
 
-        arguments[InputParameterName] = "http://example.com/semantic";
+        arguments[KernelArguments.InputParameterName] = "http://example.com/semantic";
         await AssertResult((Uri input) => new Uri(input, "kernel"), new Uri("http://example.com/kernel"), "http://example.com/kernel");
     }
 
@@ -953,25 +980,25 @@ public sealed class KernelFunctionFromMethodTests1
         // Act/Assert
 
         this._kernel.Culture = new CultureInfo("fr-FR");
-        arguments[InputParameterName] = "12,34"; // tries first to parse with the specified culture
+        arguments[KernelArguments.InputParameterName] = "12,34"; // tries first to parse with the specified culture
         result = await func.InvokeAsync(this._kernel, arguments);
         Assert.Equal(24.68, result.GetValue<double>());
         Assert.Equal("24,68", result.ToString());
 
         this._kernel.Culture = new CultureInfo("fr-FR");
-        arguments[InputParameterName] = "12.34"; // falls back to invariant culture
+        arguments[KernelArguments.InputParameterName] = "12.34"; // falls back to invariant culture
         result = await func.InvokeAsync(this._kernel, arguments);
         Assert.Equal(24.68, result.GetValue<double>());
         Assert.Equal("24,68", result.ToString());
 
         this._kernel.Culture = new CultureInfo("en-US");
-        arguments[InputParameterName] = "12.34"; // works with current culture
+        arguments[KernelArguments.InputParameterName] = "12.34"; // works with current culture
         result = await func.InvokeAsync(this._kernel, arguments);
         Assert.Equal(24.68, result.GetValue<double>());
         Assert.Equal("24.68", result.ToString());
 
         this._kernel.Culture = new CultureInfo("en-US");
-        arguments[InputParameterName] = "12,34"; // not parsable with current or invariant culture
+        arguments[KernelArguments.InputParameterName] = "12,34"; // not parsable with current or invariant culture
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => func.InvokeAsync(this._kernel, arguments));
     }
 
@@ -1042,10 +1069,10 @@ public sealed class KernelFunctionFromMethodTests1
         var function4 = KernelFunctionFactory.CreateFromMethod(TestBool);
 
         // Act
-        FunctionResult result1 = await function1.InvokeAsync(this._kernel, new() { ["number"] = "42" });
-        FunctionResult result2 = await function2.InvokeAsync(this._kernel, new() { ["number"] = "3.14" });
-        FunctionResult result3 = await function3.InvokeAsync(this._kernel, new() { ["str"] = "test-string" });
-        FunctionResult result4 = await function4.InvokeAsync(this._kernel, new() { ["flag"] = "true" });
+        FunctionResult result1 = await function1.InvokeAsync(this._kernel, new("42"));
+        FunctionResult result2 = await function2.InvokeAsync(this._kernel, new("3.14"));
+        FunctionResult result3 = await function3.InvokeAsync(this._kernel, new("test-string"));
+        FunctionResult result4 = await function4.InvokeAsync(this._kernel, new("true"));
 
         // Assert
         Assert.Equal(42, result1.GetValue<int>());
@@ -1120,74 +1147,6 @@ public sealed class KernelFunctionFromMethodTests1
         }
 
         Assert.True(assertResult.SequenceEqual(new List<int> { 1, 2, 3 }));
-    }
-
-    [Fact]
-    public async Task ItCanStreamAsyncEnumerableTypeAsync()
-    {
-        // Arrange
-        bool invoked = false;
-        async IAsyncEnumerable<int> TestAsyncEnumerableTypeAsync()
-        {
-            invoked = true;
-            for (int i = 0; i < 10; i++)
-            {
-                await Task.Yield();
-                yield return i;
-            }
-        }
-        KernelFunction function = KernelFunctionFactory.CreateFromMethod(TestAsyncEnumerableTypeAsync);
-
-        // Act / Assert
-        IAsyncEnumerable<int> enumerable = function.InvokeStreamingAsync<int>(this._kernel);
-        Assert.False(invoked);
-        IAsyncEnumerator<int> enumerator = enumerable.GetAsyncEnumerator();
-        Assert.NotNull(enumerator);
-        Assert.False(invoked);
-        Assert.True(await enumerator.MoveNextAsync());
-        Assert.True(invoked);
-        Assert.Equal(0, enumerator.Current);
-        for (int i = 1; i < 10; i++)
-        {
-            Assert.True(await enumerator.MoveNextAsync());
-            Assert.Equal(i, enumerator.Current);
-        }
-        Assert.False(await enumerator.MoveNextAsync());
-        await enumerator.DisposeAsync();
-    }
-
-    [Fact]
-    public async Task ItCanStreamAsyncEnumerablePassthroughAsync()
-    {
-        // Arrange
-        bool invoked = false;
-        async IAsyncEnumerable<StreamingMethodContent> TestAsyncEnumerableTypeAsync()
-        {
-            invoked = true;
-            for (int i = 0; i < 10; i++)
-            {
-                await Task.Yield();
-                yield return new StreamingMethodContent(i);
-            }
-        }
-        KernelFunction function = KernelFunctionFactory.CreateFromMethod(TestAsyncEnumerableTypeAsync);
-
-        // Act / Assert
-        IAsyncEnumerable<StreamingMethodContent> enumerable = function.InvokeStreamingAsync<StreamingMethodContent>(this._kernel);
-        Assert.False(invoked);
-        IAsyncEnumerator<StreamingMethodContent> enumerator = enumerable.GetAsyncEnumerator();
-        Assert.NotNull(enumerator);
-        Assert.False(invoked);
-        Assert.True(await enumerator.MoveNextAsync());
-        Assert.True(invoked);
-        Assert.Equal(0, enumerator.Current.Content);
-        for (int i = 1; i < 10; i++)
-        {
-            Assert.True(await enumerator.MoveNextAsync());
-            Assert.Equal(i, enumerator.Current.Content);
-        }
-        Assert.False(await enumerator.MoveNextAsync());
-        await enumerator.DisposeAsync();
     }
 
     [Fact]

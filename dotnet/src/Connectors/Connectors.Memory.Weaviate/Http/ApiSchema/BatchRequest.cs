@@ -2,9 +2,10 @@
 
 using System.Collections.Generic;
 using System.Net.Http;
+using Microsoft.SemanticKernel.Connectors.Memory.Weaviate.Model;
 using Microsoft.SemanticKernel.Memory;
 
-namespace Microsoft.SemanticKernel.Connectors.Weaviate;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Weaviate.Http.ApiSchema;
 
 internal sealed class BatchRequest
 {

@@ -14,7 +14,7 @@ using Kusto.Data.Net.Client;
 using Microsoft.SemanticKernel.Http;
 using Microsoft.SemanticKernel.Memory;
 
-namespace Microsoft.SemanticKernel.Connectors.Kusto;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Kusto;
 
 /// <summary>
 /// An implementation of <see cref="IMemoryStore"/> backed by a Kusto database.

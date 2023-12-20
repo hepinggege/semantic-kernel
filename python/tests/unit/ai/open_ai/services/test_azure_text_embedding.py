@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 
+from logging import Logger
 from unittest.mock import AsyncMock, call, patch
 
 import pytest
@@ -21,6 +22,7 @@ def test_azure_text_embedding_init() -> None:
     endpoint = "https://test-endpoint.com"
     api_key = "test_api_key"
     api_version = "2023-03-15-preview"
+    logger = Logger("test_logger")
 
     # Test successful initialization
     azure_text_embedding = AzureTextEmbedding(
@@ -28,6 +30,7 @@ def test_azure_text_embedding_init() -> None:
         endpoint=endpoint,
         api_key=api_key,
         api_version=api_version,
+        logger=logger,
     )
 
     assert azure_text_embedding.client is not None
@@ -41,6 +44,7 @@ def test_azure_text_embedding_init_with_empty_deployment_name() -> None:
     endpoint = "https://test-endpoint.com"
     api_key = "test_api_key"
     api_version = "2023-03-15-preview"
+    logger = Logger("test_logger")
 
     with pytest.raises(ValidationError, match="ai_model_id"):
         AzureTextEmbedding(
@@ -48,6 +52,7 @@ def test_azure_text_embedding_init_with_empty_deployment_name() -> None:
             endpoint=endpoint,
             api_key=api_key,
             api_version=api_version,
+            logger=logger,
         )
 
 
@@ -56,6 +61,7 @@ def test_azure_text_embedding_init_with_empty_api_key() -> None:
     endpoint = "https://test-endpoint.com"
     # api_key = "test_api_key"
     api_version = "2023-03-15-preview"
+    logger = Logger("test_logger")
 
     with pytest.raises(AIException, match="api_key"):
         AzureTextEmbedding(
@@ -63,6 +69,7 @@ def test_azure_text_embedding_init_with_empty_api_key() -> None:
             endpoint=endpoint,
             api_key="",
             api_version=api_version,
+            logger=logger,
         )
 
 
@@ -71,6 +78,7 @@ def test_azure_text_embedding_init_with_empty_endpoint() -> None:
     # endpoint = "https://test-endpoint.com"
     api_key = "test_api_key"
     api_version = "2023-03-15-preview"
+    logger = Logger("test_logger")
 
     with pytest.raises(ValidationError, match="endpoint"):
         AzureTextEmbedding(
@@ -78,6 +86,7 @@ def test_azure_text_embedding_init_with_empty_endpoint() -> None:
             endpoint="",
             api_key=api_key,
             api_version=api_version,
+            logger=logger,
         )
 
 
@@ -86,6 +95,7 @@ def test_azure_text_embedding_init_with_invalid_endpoint() -> None:
     endpoint = "http://test-endpoint.com"
     api_key = "test_api_key"
     api_version = "2023-03-15-preview"
+    logger = Logger("test_logger")
 
     with pytest.raises(ValidationError, match="https"):
         AzureTextEmbedding(
@@ -93,6 +103,7 @@ def test_azure_text_embedding_init_with_invalid_endpoint() -> None:
             endpoint=endpoint,
             api_key=api_key,
             api_version=api_version,
+            logger=logger,
         )
 
 
@@ -101,6 +112,7 @@ def test_azure_text_embedding_init_with_from_dict() -> None:
     endpoint = "https://test-endpoint.com"
     api_key = "test_api_key"
     api_version = "2023-03-15-preview"
+    logger = Logger("test_logger")
     default_headers = {"test_header": "test_value"}
 
     settings = {
@@ -108,6 +120,7 @@ def test_azure_text_embedding_init_with_from_dict() -> None:
         "endpoint": endpoint,
         "api_key": api_key,
         "api_version": api_version,
+        "log": logger,
         "default_headers": default_headers,
     }
 
@@ -133,6 +146,7 @@ async def test_azure_text_embedding_calls_with_parameters(mock_create) -> None:
     endpoint = "https://test-endpoint.com"
     api_key = "test_api_key"
     api_version = "2023-03-15-preview"
+    logger = Logger("test_logger")
     texts = ["hello world", "goodbye world"]
 
     azure_text_embedding = AzureTextEmbedding(
@@ -140,6 +154,7 @@ async def test_azure_text_embedding_calls_with_parameters(mock_create) -> None:
         endpoint=endpoint,
         api_key=api_key,
         api_version=api_version,
+        logger=logger,
     )
 
     await azure_text_embedding.generate_embeddings_async(texts)
@@ -157,6 +172,7 @@ async def test_azure_text_embedding_calls_with_batches(mock_create) -> None:
     endpoint = "https://test-endpoint.com"
     api_key = "test_api_key"
     api_version = "2023-03-15-preview"
+    logger = Logger("test_logger")
     texts = [i for i in range(0, 5)]
 
     azure_text_embedding = AzureTextEmbedding(
@@ -164,6 +180,7 @@ async def test_azure_text_embedding_calls_with_batches(mock_create) -> None:
         endpoint=endpoint,
         api_key=api_key,
         api_version=api_version,
+        log=logger,
     )
 
     await azure_text_embedding.generate_embeddings_async(texts, batch_size=3)

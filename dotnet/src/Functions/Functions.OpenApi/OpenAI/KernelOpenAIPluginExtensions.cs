@@ -10,17 +10,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.SemanticKernel.Http;
 
-namespace Microsoft.SemanticKernel.Plugins.OpenApi;
+namespace Microsoft.SemanticKernel.Plugins.OpenApi.OpenAI;
 
 /// <summary>
 /// Provides extension methods for importing plugins exposed through OpenAI's ChatGPT format.
 /// </summary>
 public static class OpenAIPluginKernelExtensions
 {
-    private static readonly JsonSerializerOptions s_jsonOptionsCache =
+    private static readonly JsonSerializerOptions s_jsonOptionsOpenAIManifest =
         new()
         {
             Converters = { new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower) },
@@ -112,7 +110,7 @@ public static class OpenAIPluginKernelExtensions
 
         var openAIManifest = await DocumentLoader.LoadDocumentFromFilePathAsync(
             filePath,
-            kernel.LoggerFactory.CreateLogger(typeof(OpenAIPluginKernelExtensions)) ?? NullLogger.Instance,
+            kernel.LoggerFactory.CreateLogger(typeof(OpenAIPluginKernelExtensions)),
             cancellationToken).ConfigureAwait(false);
 
         return await CreateAsync(
@@ -148,7 +146,7 @@ public static class OpenAIPluginKernelExtensions
 
         var openAIManifest = await DocumentLoader.LoadDocumentFromUriAsync(
             uri,
-            kernel.LoggerFactory.CreateLogger(typeof(OpenAIPluginKernelExtensions)) ?? NullLogger.Instance,
+            kernel.LoggerFactory.CreateLogger(typeof(OpenAIPluginKernelExtensions)),
             httpClient,
             null, // auth is not needed when loading the manifest
             executionParameters?.UserAgent,
@@ -205,7 +203,7 @@ public static class OpenAIPluginKernelExtensions
         try
         {
             pluginJson = JsonNode.Parse(openAIManifest)!;
-            openAIAuthConfig = pluginJson["auth"].Deserialize<OpenAIAuthenticationConfig>(s_jsonOptionsCache)!;
+            openAIAuthConfig = pluginJson["auth"].Deserialize<OpenAIAuthenticationConfig>(s_jsonOptionsOpenAIManifest)!;
         }
         catch (JsonException ex)
         {

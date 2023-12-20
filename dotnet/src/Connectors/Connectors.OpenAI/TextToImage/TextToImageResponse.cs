@@ -9,7 +9,8 @@ namespace Microsoft.SemanticKernel.Connectors.OpenAI;
 /// <summary>
 /// Text to image response
 /// </summary>
-internal class TextToImageResponse
+[Experimental("SKEXP0012")]
+public class TextToImageResponse
 {
     /// <summary>
     /// OpenAI Image response

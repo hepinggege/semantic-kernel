@@ -1,9 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-#pragma warning disable SYSLIB1006 // Multiple logging methods cannot use the same event id within a class
-
 using System;
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.SemanticKernel;
@@ -20,80 +17,36 @@ internal static partial class KernelFunctionLogMessages
     /// </summary>
     [LoggerMessage(
         EventId = 0,
-        Level = LogLevel.Information,
-        Message = "Function {FunctionName} invoking.")]
-    public static partial void LogFunctionInvoking(
+        Level = LogLevel.Trace, // Sensitive data, logging as trace, disabled by default
+        Message = "Function {FunctionName} invoking. Arguments: {Arguments}.")]
+    public static partial void LogFunctionInvokingWithArguments(
         this ILogger logger,
-        string functionName);
+        string functionName,
+        KernelArguments arguments);
 
     /// <summary>
-    /// Logs arguments to a <see cref="KernelFunction"/>.
-    /// The action provides the benefit of caching the template parsing result for better performance.
-    /// And the public method is a helper to serialize the arguments.
+    /// Logs cancellation of a <see cref="KernelFunction"/>.
     /// </summary>
-    private static readonly Action<ILogger, string, Exception?> s_logFunctionArguments =
-        LoggerMessage.Define<string>(
-            logLevel: LogLevel.Trace,   // Sensitive data, logging as trace, disabled by default
-            eventId: 0,
-            "Function arguments: {Arguments}");
-    public static void LogFunctionArguments(this ILogger logger, KernelArguments arguments)
-    {
-        if (logger.IsEnabled(LogLevel.Trace))
-        {
-            try
-            {
-                var jsonString = JsonSerializer.Serialize(arguments);
-                s_logFunctionArguments(logger, jsonString, null);
-            }
-            catch (NotSupportedException ex)
-            {
-                s_logFunctionArguments(logger, "Failed to serialize arguments to Json", ex);
-            }
-        }
-    }
+    [LoggerMessage(
+        EventId = 1,
+        Level = LogLevel.Information,
+        Message = "Function canceled prior to invocation.")]
+    public static partial void LogFunctionCanceledPriorToInvoking(this ILogger logger);
 
     /// <summary>
     /// Logs successful invocation of a <see cref="KernelFunction"/>.
     /// </summary>
     [LoggerMessage(
-        EventId = 0,
-        Level = LogLevel.Information,
-        Message = "Function {FunctionName} succeeded.")]
-    public static partial void LogFunctionInvokedSuccess(this ILogger logger, string functionName);
-
-    /// <summary>
-    /// Logs result of a <see cref="KernelFunction"/>.
-    /// The action provides the benefit of caching the template parsing result for better performance.
-    /// And the public method is a helper to serialize the result.
-    /// </summary>
-    private static readonly Action<ILogger, string, Exception?> s_logFunctionResultValue =
-        LoggerMessage.Define<string>(
-            logLevel: LogLevel.Trace,   // Sensitive data, logging as trace, disabled by default
-            eventId: 0,
-            "Function result: {ResultValue}");
-    public static void LogFunctionResultValue(this ILogger logger, object? resultValue)
-    {
-        if (logger.IsEnabled(LogLevel.Trace))
-        {
-            try
-            {
-                var jsonString = resultValue?.GetType() == typeof(string)
-                    ? resultValue.ToString()
-                    : JsonSerializer.Serialize(resultValue);
-                s_logFunctionResultValue(logger, jsonString ?? string.Empty, null);
-            }
-            catch (NotSupportedException ex)
-            {
-                s_logFunctionResultValue(logger, "Failed to serialize result value to Json", ex);
-            }
-        }
-    }
+        EventId = 2,
+        Level = LogLevel.Trace, // Sensitive data, logging as trace, disabled by default
+        Message = "Function succeeded. Result: {Result}")]
+    public static partial void LogFunctionInvokedSuccess(this ILogger logger, object? result);
 
     /// <summary>
     /// Logs <see cref="KernelFunction"/> error.
     /// </summary>
     [LoggerMessage(
-        EventId = 0,
+        EventId = 3,
         Level = LogLevel.Error,
         Message = "Function failed. Error: {Message}")]
     public static partial void LogFunctionError(
@@ -105,7 +58,7 @@ internal static partial class KernelFunctionLogMessages
     /// Logs <see cref="KernelFunction"/> complete.
     /// </summary>
     [LoggerMessage(
-        EventId = 0,
+        EventId = 4,
         Level = LogLevel.Information,
         Message = "Function completed. Duration: {Duration}s")]
     public static partial void LogFunctionComplete(
@@ -116,18 +69,19 @@ internal static partial class KernelFunctionLogMessages
     /// Logs streaming invocation of a <see cref="KernelFunction"/>.
     /// </summary>
     [LoggerMessage(
-        EventId = 0,
-        Level = LogLevel.Information,
-        Message = "Function {FunctionName} streaming.")]
-    public static partial void LogFunctionStreamingInvoking(
+        EventId = 5,
+        Level = LogLevel.Trace, // Sensitive data, logging as trace, disabled by default
+        Message = "Function {FunctionName} streaming. Arguments: {Arguments}.")]
+    public static partial void LogFunctionStreamingInvokingWithArguments(
         this ILogger logger,
-        string functionName);
+        string functionName,
+        KernelArguments arguments);
 
     /// <summary>
     /// Logs <see cref="KernelFunction"/> streaming complete.
     /// </summary>
     [LoggerMessage(
-        EventId = 0,
+        EventId = 6,
         Level = LogLevel.Information,
         Message = "Function streaming completed. Duration: {Duration}s.")]
     public static partial void LogFunctionStreamingComplete(

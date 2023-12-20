@@ -31,8 +31,7 @@ public sealed class PromptExecutionSettingsNodeDeserializerTests
         Assert.Equal(2, semanticFunctionConfig.InputVariables.Count);
         Assert.Equal("language", semanticFunctionConfig.InputVariables[1].Name);
         Assert.Equal(2, semanticFunctionConfig.ExecutionSettings.Count);
-        Assert.Equal("gpt-4", semanticFunctionConfig.ExecutionSettings["service1"].ModelId);
-        Assert.Equal("gpt-3.5", semanticFunctionConfig.ExecutionSettings["service2"].ModelId);
+        Assert.Equal("gpt-3.5", semanticFunctionConfig.ExecutionSettings[1].ModelId);
     }
 
     private readonly string _yaml = @"
@@ -48,16 +47,14 @@ public sealed class PromptExecutionSettingsNodeDeserializerTests
         description:   The language to generate the greeting in
         default:       English
     execution_settings:
-      service1:
-        model_id:          gpt-4
+      - model_id:          gpt-4
         temperature:       1.0
         top_p:             0.0
         presence_penalty:  0.0
         frequency_penalty: 0.0
         max_tokens:        256
         stop_sequences:    []
-      service2:
-        model_id:          gpt-3.5
+      - model_id:          gpt-3.5
         temperature:       1.0
         top_p:             0.0
         presence_penalty:  0.0

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Plugins.OpenApi;
+using Microsoft.SemanticKernel.Plugins.OpenApi.Model;
 using Xunit;
 
 namespace SemanticKernel.Functions.UnitTests.OpenApi;
@@ -23,7 +23,7 @@ public class RestApiOperationExtensionsTests
         var operation = CreateTestOperation(method, payload);
 
         //Act
-        var parameters = operation.GetParameters(addPayloadParamsFromMetadata: false);
+        var parameters = operation.GetParameters();
 
         //Assert
         Assert.NotNull(parameters);
@@ -81,7 +81,7 @@ public class RestApiOperationExtensionsTests
         var operation = CreateTestOperation(method, payload);
 
         //Act
-        var parameters = operation.GetParameters(addPayloadParamsFromMetadata: false);
+        var parameters = operation.GetParameters();
 
         //Assert
         Assert.NotNull(parameters);

@@ -8,7 +8,12 @@ using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 
-// This example shows how to use a retry handler within a Semantic Kernel
+#pragma warning disable CA1031 // Do not catch general exception types
+#pragma warning disable CA2000 // Dispose objects before losing scope
+
+/*
+ * This example shows how to use a retry handler within a Semantic Kernel
+ */
 public static class Example08_RetryHandler
 {
     public static async Task RunAsync()

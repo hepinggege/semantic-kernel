@@ -1,9 +1,15 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional, Union
+from logging import Logger
+from typing import (
+    TYPE_CHECKING,
+    ClassVar,
+    Dict,
+    Optional,
+    Union,
+)
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from semantic_kernel.orchestration.sk_function import SKFunction
 from semantic_kernel.skill_definition import constants
@@ -15,11 +21,10 @@ from semantic_kernel.skill_definition.read_only_skill_collection_base import (
     ReadOnlySkillCollectionBase,
 )
 from semantic_kernel.skill_definition.skill_collection_base import SkillCollectionBase
+from semantic_kernel.utils.null_logger import NullLogger
 
 if TYPE_CHECKING:
     from semantic_kernel.orchestration.sk_function_base import SKFunctionBase
-
-logger: logging.Logger = logging.getLogger(__name__)
 
 
 class SkillCollection(SkillCollectionBase):
@@ -27,17 +32,14 @@ class SkillCollection(SkillCollectionBase):
     read_only_skill_collection_: ReadOnlySkillCollection = Field(
         alias="read_only_skill_collection"
     )
+    _log: Logger = PrivateAttr()
 
     def __init__(
         self,
-        log: Optional[Any] = None,
+        log: Optional[Logger] = None,
         skill_collection: Union[Dict[str, Dict[str, SKFunction]], None] = None,
         read_only_skill_collection_: Optional[ReadOnlySkillCollection] = None,
     ) -> None:
-        if log:
-            logger.warning(
-                "The `log` parameter is deprecated. Please use the `logging` module instead."
-            )
         if skill_collection and read_only_skill_collection_:
             raise ValueError(
                 "Only one of `skill_collection` and `read_only_skill_collection` can be"
@@ -50,6 +52,7 @@ class SkillCollection(SkillCollectionBase):
         else:
             read_only_skill_collection = read_only_skill_collection_
         super().__init__(read_only_skill_collection=read_only_skill_collection)
+        self._log = log or NullLogger()
 
     @property
     def read_only_skill_collection(self) -> ReadOnlySkillCollectionBase:

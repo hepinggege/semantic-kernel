@@ -6,11 +6,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.SemanticKernel.Text;
 
-namespace Microsoft.SemanticKernel.Connectors.Weaviate;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Weaviate.Http;
 
 internal static class HttpRequest
 {
-    private static readonly JsonSerializerOptions s_jsonOptionsCache = new()
+    private static readonly JsonSerializerOptions s_jsonSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -45,7 +45,7 @@ internal static class HttpRequest
             return null;
         }
 
-        string strPayload = payload as string ?? JsonSerializer.Serialize(payload, s_jsonOptionsCache);
+        string strPayload = payload as string ?? JsonSerializer.Serialize(payload, s_jsonSerializerOptions);
         return new(strPayload, Encoding.UTF8, "application/json");
     }
 }

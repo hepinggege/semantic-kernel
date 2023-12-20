@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Net.Http;
-using Microsoft.SemanticKernel.Http;
-using Microsoft.SemanticKernel.Memory;
+using Microsoft.SemanticKernel.Plugins.Memory;
 
-namespace Microsoft.SemanticKernel.Connectors.Qdrant;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Qdrant;
 
 /// <summary>
 /// Provides extension methods for the <see cref="MemoryBuilder"/> class to configure Qdrant connector.

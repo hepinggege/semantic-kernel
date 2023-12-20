@@ -1,9 +1,9 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 import asyncio
-import logging
 import re
 import threading
+from logging import Logger
 from typing import Any, Callable, ClassVar, List, Optional, Union
 
 from pydantic import PrivateAttr
@@ -26,8 +26,7 @@ from semantic_kernel.skill_definition.read_only_skill_collection import (
 from semantic_kernel.skill_definition.read_only_skill_collection_base import (
     ReadOnlySkillCollectionBase,
 )
-
-logger: logging.Logger = logging.getLogger(__name__)
+from semantic_kernel.utils.null_logger import NullLogger
 
 
 class Plan(SKFunctionBase):
@@ -137,13 +136,9 @@ class Plan(SKFunctionBase):
         context: Optional[SKContext] = None,
         settings: Optional[CompleteRequestSettings] = None,
         memory: Optional[SemanticTextMemoryBase] = None,
-        **kwargs,
+        logger: Optional[Logger] = None,
         # TODO: cancellation_token: CancellationToken,
     ) -> SKContext:
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
         if input is not None and input != "":
             self._state.update(input)
 
@@ -152,6 +147,7 @@ class Plan(SKFunctionBase):
                 variables=self._state,
                 skill_collection=ReadOnlySkillCollection(),
                 memory=memory or NullMemory(),
+                logger=logger if logger is not None else NullLogger(),
             )
 
         if self._function is not None:
@@ -159,7 +155,7 @@ class Plan(SKFunctionBase):
                 context=context, settings=settings
             )
             if result.error_occurred:
-                logger.error(
+                result.log.error(
                     "Something went wrong in plan step {0}.{1}:'{2}'".format(
                         self._skill_name, self._name, result.last_error_description
                     )
@@ -182,12 +178,8 @@ class Plan(SKFunctionBase):
         context: Optional[SKContext] = None,
         settings: Optional[CompleteRequestSettings] = None,
         memory: Optional[SemanticTextMemoryBase] = None,
-        **kwargs,
+        logger: Optional[Logger] = None,
     ) -> SKContext:
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
         if input is not None and input != "":
             self._state.update(input)
 
@@ -196,12 +188,13 @@ class Plan(SKFunctionBase):
                 variables=self._state,
                 skill_collection=ReadOnlySkillCollection(),
                 memory=memory or NullMemory(),
+                logger=logger,
             )
 
         if self._function is not None:
             result = self._function.invoke(context=context, settings=settings)
             if result.error_occurred:
-                logger.error(
+                result.log.error(
                     result.last_exception,
                     "Something went wrong in plan step {0}.{1}:'{2}'".format(
                         self.skill_name, self.name, context.last_error_description
@@ -315,6 +308,7 @@ class Plan(SKFunctionBase):
                 variables=variables,
                 memory=context.memory,
                 skill_collection=context.skills,
+                logger=context.log,
             )
             result = await step.invoke_async(context=func_context)
             result_value = result.result

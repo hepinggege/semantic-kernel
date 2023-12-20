@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-import logging
+from logging import Logger
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,29 +22,24 @@ from semantic_kernel.connectors.ai.open_ai.utils import _parse_message
 if TYPE_CHECKING:
     from semantic_kernel.connectors.ai.chat_request_settings import ChatRequestSettings
 
-logger: logging.Logger = logging.getLogger(__name__)
-
 
 class OpenAIChatCompletionBase(OpenAIHandler, ChatCompletionClientBase):
     async def complete_chat_async(
         self,
         messages: List[Dict[str, str]],
         settings: "ChatRequestSettings",
-        **kwargs,
+        logger: Optional[Logger] = None,
     ) -> Union[str, List[str]]:
         """Executes a chat completion request and returns the result.
 
         Arguments:
             messages {List[Tuple[str,str]]} -- The messages to use for the chat completion.
             settings {ChatRequestSettings} -- The settings to use for the chat completion request.
+            logger {Optional[Logger]} -- The logger instance to use. (Optional)
 
         Returns:
             Union[str, List[str]] -- The completion result(s).
         """
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
         response = await self._send_request(
             messages=messages, request_settings=settings, stream=False
         )
@@ -59,7 +54,7 @@ class OpenAIChatCompletionBase(OpenAIHandler, ChatCompletionClientBase):
         messages: List[Dict[str, str]],
         functions: List[Dict[str, Any]],
         request_settings: "ChatRequestSettings",
-        **kwargs,
+        logger: Optional[Logger] = None,
     ) -> Union[
         Tuple[Optional[str], Optional[FunctionCall]],
         List[Tuple[Optional[str], Optional[FunctionCall]]],
@@ -70,14 +65,12 @@ class OpenAIChatCompletionBase(OpenAIHandler, ChatCompletionClientBase):
             messages {List[Tuple[str,str]]} -- The messages to use for the chat completion.
             functions {List[Dict[str, Any]]} -- The functions to use for the chat completion.
             settings {ChatRequestSettings} -- The settings to use for the chat completion request.
+            logger {Optional[Logger]} -- The logger instance to use. (Optional)
 
         Returns:
             Union[str, List[str]] -- The completion result(s).
         """
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
+
         response = await self._send_request(
             messages=messages,
             request_settings=request_settings,
@@ -86,29 +79,28 @@ class OpenAIChatCompletionBase(OpenAIHandler, ChatCompletionClientBase):
         )
 
         if len(response.choices) == 1:
-            return _parse_message(response.choices[0].message)
+            return _parse_message(response.choices[0].message, self.log)
         else:
-            return [_parse_message(choice.message) for choice in response.choices]
+            return [
+                _parse_message(choice.message, self.log) for choice in response.choices
+            ]
 
     async def complete_chat_stream_async(
         self,
         messages: List[Dict[str, str]],
         settings: "ChatRequestSettings",
-        **kwargs,
+        logger: Optional[Logger] = None,
     ) -> AsyncGenerator[Union[str, List[str]], None]:
         """Executes a chat completion request and returns the result.
 
         Arguments:
             messages {List[Tuple[str,str]]} -- The messages to use for the chat completion.
             settings {ChatRequestSettings} -- The settings to use for the chat completion request.
+            logger {Optional[Logger]} -- The logger instance to use. (Optional)
 
         Returns:
             Union[str, List[str]] -- The completion result(s).
         """
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
         response = await self._send_request(
             messages=messages, request_settings=settings, stream=True
         )

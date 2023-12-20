@@ -2,7 +2,7 @@
 
 using Microsoft.Data.Sqlite;
 
-namespace Microsoft.SemanticKernel.Connectors.Sqlite;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Sqlite;
 
 internal static class SqliteExtensions
 {

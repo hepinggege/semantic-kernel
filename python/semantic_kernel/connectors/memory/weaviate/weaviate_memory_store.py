@@ -1,9 +1,9 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 import asyncio
-import logging
 from dataclasses import dataclass
-from typing import List, Tuple
+from logging import Logger
+from typing import List, Optional, Tuple
 
 import numpy as np
 import weaviate
@@ -11,8 +11,7 @@ from weaviate.embedded import EmbeddedOptions
 
 from semantic_kernel.memory.memory_record import MemoryRecord
 from semantic_kernel.memory.memory_store_base import MemoryStoreBase
-
-logger: logging.Logger = logging.getLogger(__name__)
+from semantic_kernel.utils.null_logger import NullLogger
 
 SCHEMA = {
     "class": "MemoryRecord",
@@ -116,11 +115,8 @@ class WeaviateMemoryStore(MemoryStoreBase):
             """
             return {key.lstrip("_"): value for key, value in sk_dict.items()}
 
-    def __init__(self, config: WeaviateConfig, **kwargs):
-        if kwargs.get("logger"):
-            logger.warning(
-                "The `logger` parameter is deprecated. Please use the `logging` module instead."
-            )
+    def __init__(self, config: WeaviateConfig, logger: Optional[Logger] = None):
+        self._logger = logger or NullLogger()
         self.config = config
         self.client = self._initialize_client()
 

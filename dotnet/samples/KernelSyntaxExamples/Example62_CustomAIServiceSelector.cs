@@ -8,6 +8,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Services;
 
+// ReSharper disable once InconsistentNaming
 public static class Example62_CustomAIServiceSelector
 {
     /// <summary>
@@ -42,13 +43,13 @@ public static class Example62_CustomAIServiceSelector
             .AddAzureOpenAIChatCompletion(
                 deploymentName: azureDeploymentName,
                 endpoint: azureEndpoint,
-                apiKey: azureApiKey,
                 serviceId: "AzureOpenAIChat",
-                modelId: azureModelId)
+                modelId: azureModelId,
+                apiKey: azureApiKey)
             .AddOpenAIChatCompletion(
                 modelId: openAIModelId,
-                apiKey: openAIApiKey,
-                serviceId: "OpenAIChat");
+                serviceId: "OpenAIChat",
+                apiKey: openAIApiKey);
         builder.Services.AddSingleton<IAIServiceSelector>(new GptAIServiceSelector()); // Use the custom AI service selector to select the GPT model
         Kernel kernel = builder.Build();
 

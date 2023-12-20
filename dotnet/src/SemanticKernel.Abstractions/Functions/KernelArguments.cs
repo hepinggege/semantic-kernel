@@ -22,17 +22,18 @@ public sealed class KernelArguments : IDictionary<string, object?>, IReadOnlyDic
     private readonly Dictionary<string, object?> _arguments;
 
     /// <summary>
+    /// The main input parameter name.
+    /// </summary>
+    internal const string InputParameterName = "input";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="KernelArguments"/> class with the specified AI execution settings.
     /// </summary>
     /// <param name="executionSettings">The prompt execution settings.</param>
     public KernelArguments(PromptExecutionSettings? executionSettings = null)
     {
         this._arguments = new(StringComparer.OrdinalIgnoreCase);
-
-        if (executionSettings is not null)
-        {
-            this.ExecutionSettings = new Dictionary<string, PromptExecutionSettings>() { { PromptExecutionSettings.DefaultServiceId, executionSettings } };
-        }
+        this.ExecutionSettings = executionSettings;
     }
 
     /// <summary>
@@ -44,7 +45,7 @@ public sealed class KernelArguments : IDictionary<string, object?>, IReadOnlyDic
     /// If <paramref name="executionSettings"/> is non-null, it is used as the <see cref="ExecutionSettings"/> for this new instance.
     /// Otherwise, if the source is a <see cref="KernelArguments"/>, its <see cref="ExecutionSettings"/> are used.
     /// </remarks>
-    public KernelArguments(IDictionary<string, object?> source, Dictionary<string, PromptExecutionSettings>? executionSettings = null)
+    public KernelArguments(IDictionary<string, object?> source, PromptExecutionSettings? executionSettings = null)
     {
         Verify.NotNull(source);
 
@@ -53,9 +54,20 @@ public sealed class KernelArguments : IDictionary<string, object?>, IReadOnlyDic
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="KernelArguments"/> class that contains a single input argument.
+    /// </summary>
+    /// <param name="input">A string input value to use as the <see cref="InputParameterName"/> argument.</param>
+    /// <param name="executionSettings">The prompt execution settings.</param>
+    public KernelArguments(string? input, PromptExecutionSettings? executionSettings = null)
+    {
+        this._arguments = new(1, StringComparer.OrdinalIgnoreCase) { [InputParameterName] = input };
+        this.ExecutionSettings = executionSettings;
+    }
+
+    /// <summary>
     /// Gets or sets the prompt execution settings.
     /// </summary>
-    public IReadOnlyDictionary<string, PromptExecutionSettings>? ExecutionSettings { get; set; }
+    public PromptExecutionSettings? ExecutionSettings { get; set; }
 
     /// <summary>
     /// Gets the number of arguments contained in the <see cref="KernelArguments"/>.

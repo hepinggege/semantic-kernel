@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 from abc import abstractmethod
+from logging import Logger
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from semantic_kernel.connectors.ai.complete_request_settings import (
@@ -22,6 +23,10 @@ if TYPE_CHECKING:
 
 
 class SKFunctionBase(SKBaseModel):
+    FUNCTION_PARAM_NAME_REGEX: str = r"^[0-9A-Za-z_]*$"
+    FUNCTION_NAME_REGEX: str = r"^[0-9A-Za-z_]*$"
+    SKILL_NAME_REGEX: str = r"^[0-9A-Za-z_]*$"
+
     @property
     @abstractmethod
     def name(self) -> str:
@@ -102,6 +107,7 @@ class SKFunctionBase(SKBaseModel):
         context: Optional["SKContext"] = None,
         memory: Optional[SemanticTextMemoryBase] = None,
         settings: Optional[CompleteRequestSettings] = None,
+        log: Optional[Logger] = None,
     ) -> "SKContext":
         """
         Invokes the function with an explicit string input
@@ -111,6 +117,7 @@ class SKFunctionBase(SKBaseModel):
             context {SKContext} -- The context to use
             memory: {SemanticTextMemoryBase} -- The memory to use
             settings {CompleteRequestSettings} -- LLM completion settings
+            log {Logger} -- Application logger
         Returns:
             SKContext -- The updated context, potentially a new one if
             context switching is implemented.
@@ -125,6 +132,7 @@ class SKFunctionBase(SKBaseModel):
         context: Optional["SKContext"] = None,
         memory: Optional[SemanticTextMemoryBase] = None,
         settings: Optional[CompleteRequestSettings] = None,
+        log: Optional[Logger] = None,
         **kwargs: Dict[str, Any],
     ) -> "SKContext":
         """
@@ -135,6 +143,7 @@ class SKFunctionBase(SKBaseModel):
             context {SKContext} -- The context to use
             memory: {SemanticTextMemoryBase} -- The memory to use
             settings {CompleteRequestSettings} -- LLM completion settings
+            log {Logger} -- Application logger
         Returns:
             SKContext -- The updated context, potentially a new one if
             context switching is implemented.

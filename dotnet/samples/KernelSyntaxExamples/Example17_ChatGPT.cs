@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
-// The following example shows how to use Semantic Kernel with OpenAI ChatGPT API
+/**
+ * The following example shows how to use Semantic Kernel with OpenAI ChatGPT API
+ */
+// ReSharper disable once InconsistentNaming
 public static class Example17_ChatGPT
 {
     public static async Task RunAsync()
@@ -57,10 +60,10 @@ public static class Example17_ChatGPT
         Console.WriteLine("======== Azure Open AI - ChatGPT ========");
 
         AzureOpenAIChatCompletionService chatCompletionService = new(
-            deploymentName: TestConfiguration.AzureOpenAI.ChatDeploymentName,
-            endpoint: TestConfiguration.AzureOpenAI.Endpoint,
-            apiKey: TestConfiguration.AzureOpenAI.ApiKey,
-            modelId: TestConfiguration.AzureOpenAI.ChatModelId);
+            TestConfiguration.AzureOpenAI.ChatDeploymentName,
+            TestConfiguration.AzureOpenAI.ChatModelId,
+            TestConfiguration.AzureOpenAI.Endpoint,
+            TestConfiguration.AzureOpenAI.ApiKey);
 
         await StartChatAsync(chatCompletionService);
     }

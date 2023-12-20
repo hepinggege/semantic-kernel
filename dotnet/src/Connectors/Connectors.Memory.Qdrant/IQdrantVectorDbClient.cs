@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.SemanticKernel.Connectors.Qdrant;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Qdrant;
 
 /// <summary>
 /// Interface for a Qdrant vector database client.

@@ -14,19 +14,19 @@ namespace Microsoft.SemanticKernel.Services;
 public static class AIServiceExtensions
 {
     /// <summary>
-    /// Gets the key used to store the model identifier in the <see cref="IAIService.Attributes"/> dictionary.
+    /// Key used to store the model identifier in the <see cref="IAIService.Attributes"/> dictionary.
     /// </summary>
-    public static string ModelIdKey => "ModelId";
+    public const string ModelIdKey = "ModelId";
 
     /// <summary>
-    /// Gets the key used to store the endpoint key in the <see cref="IAIService.Attributes"/> dictionary.
+    /// Key used to store the endpoint key in the <see cref="IAIService.Attributes"/> dictionary.
     /// </summary>
-    public static string EndpointKey => "Endpoint";
+    public const string EndpointKey = "Endpoint";
 
     /// <summary>
-    /// Gets the key used to store the API version in the <see cref="IAIService.Attributes"/> dictionary.
+    /// Key used to store the API version in the <see cref="IAIService.Attributes"/> dictionary.
     /// </summary>
-    public static string ApiVersionKey => "ApiVersion";
+    public const string ApiVersionKey = "ApiVersion";
 
     /// <summary>
     /// Gets the model identifier from <paramref name="service"/>'s <see cref="IAIService.Attributes"/>.
@@ -94,13 +94,13 @@ public static class AIServiceExtensions
         var message = new StringBuilder($"Required service of type {typeof(T)} not registered.");
         if (function.ExecutionSettings is not null)
         {
-            string serviceIds = string.Join("|", function.ExecutionSettings.Keys);
+            string serviceIds = string.Join("|", function.ExecutionSettings.Select(model => model.ServiceId));
             if (!string.IsNullOrEmpty(serviceIds))
             {
                 message.Append($" Expected serviceIds: {serviceIds}.");
             }
 
-            string modelIds = string.Join("|", function.ExecutionSettings.Values.Select(model => model.ModelId));
+            string modelIds = string.Join("|", function.ExecutionSettings.Select(model => model.ModelId));
             if (!string.IsNullOrEmpty(modelIds))
             {
                 message.Append($" Expected modelIds: {modelIds}.");

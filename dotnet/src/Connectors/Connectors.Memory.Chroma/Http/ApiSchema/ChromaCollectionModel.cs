@@ -2,7 +2,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.SemanticKernel.Connectors.Chroma;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Chroma.Http.ApiSchema;
 
 /// <summary>
 /// Chroma collection model.

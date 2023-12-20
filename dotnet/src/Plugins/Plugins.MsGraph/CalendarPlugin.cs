@@ -27,7 +27,6 @@ public sealed class CalendarPlugin
         WriteIndented = false,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
-    private static readonly char[] s_separator = { ',', ';' };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CalendarPlugin"/> class.
@@ -39,7 +38,7 @@ public sealed class CalendarPlugin
         Ensure.NotNull(connector, nameof(connector));
 
         this._connector = connector;
-        this._logger = loggerFactory?.CreateLogger(typeof(CalendarPlugin)) ?? NullLogger.Instance;
+        this._logger = loggerFactory is not null ? loggerFactory.CreateLogger(typeof(CalendarPlugin)) : NullLogger.Instance;
     }
 
     /// <summary>
@@ -66,7 +65,7 @@ public sealed class CalendarPlugin
             End = end,
             Location = location,
             Content = content,
-            Attendees = attendees is not null ? attendees.Split(s_separator, StringSplitOptions.RemoveEmptyEntries) : Enumerable.Empty<string>(),
+            Attendees = attendees is not null ? attendees.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries) : Enumerable.Empty<string>(),
         };
 
         // Sensitive data, logging as trace, disabled by default

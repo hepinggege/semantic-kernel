@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.SemanticKernel.TemplateEngine;
+namespace Microsoft.SemanticKernel.TemplateEngine.Blocks;
 
 #pragma warning disable CA2254 // error strings are used also internally, not just for logging
 #pragma warning disable CA1031 // IsCriticalException is an internal utility and should not be used by extensions
@@ -90,7 +90,7 @@ internal sealed class CodeBlock : Block, ICodeRendering
         return this._tokens[0].Type switch
         {
             BlockTypes.Value or BlockTypes.Variable => new ValueTask<object?>(((ITextRendering)this._tokens[0]).Render(arguments)),
-            BlockTypes.FunctionId => this.RenderFunctionCallAsync((FunctionIdBlock)this._tokens[0], kernel, arguments, cancellationToken),
+            BlockTypes.FunctionId => this.RenderFunctionCallAsync((FunctionIdBlock)this._tokens[0], kernel, arguments),
             _ => throw new KernelException($"Unexpected first token type: {this._tokens[0].Type:G}"),
         };
     }
@@ -100,7 +100,7 @@ internal sealed class CodeBlock : Block, ICodeRendering
     private bool _validated;
     private readonly List<Block> _tokens;
 
-    private async ValueTask<object?> RenderFunctionCallAsync(FunctionIdBlock fBlock, Kernel kernel, KernelArguments? arguments, CancellationToken cancellationToken)
+    private async ValueTask<object?> RenderFunctionCallAsync(FunctionIdBlock fBlock, Kernel kernel, KernelArguments? arguments)
     {
         // If the code syntax is {{functionName $varName}} use $varName instead of $input
         // If the code syntax is {{functionName 'value'}} use "value" instead of $input
@@ -111,7 +111,7 @@ internal sealed class CodeBlock : Block, ICodeRendering
         }
         try
         {
-            var result = await kernel.InvokeAsync(fBlock.PluginName, fBlock.FunctionName, arguments, cancellationToken).ConfigureAwait(false);
+            var result = await kernel.InvokeAsync(fBlock.PluginName, fBlock.FunctionName, arguments).ConfigureAwait(false);
 
             return result.Value;
         }
@@ -200,8 +200,10 @@ internal sealed class CodeBlock : Block, ICodeRendering
 
         for (int i = namedArgsStartIndex; i < this._tokens.Count; i++)
         {
+            var arg = this._tokens[i] as NamedArgBlock;
+
             // When casting fails because the block isn't a NamedArg, arg is null
-            if (this._tokens[i] is not NamedArgBlock arg)
+            if (arg == null)
             {
                 var errorMsg = "Functions support up to one positional argument";
                 this.Logger.LogError(errorMsg);

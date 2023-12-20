@@ -16,9 +16,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
+using Microsoft.SemanticKernel.Plugins.OpenApi.Model;
 using Microsoft.SemanticKernel.Text;
 
-namespace Microsoft.SemanticKernel.Plugins.OpenApi;
+namespace Microsoft.SemanticKernel.Plugins.OpenApi.OpenApi;
 
 /// <summary>
 /// Parser for OpenAPI documents.
@@ -31,7 +32,7 @@ internal sealed class OpenApiDocumentParser : IOpenApiDocumentParser
     /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> to use for logging. If null, no logging will be performed.</param>
     public OpenApiDocumentParser(ILoggerFactory? loggerFactory = null)
     {
-        this._logger = loggerFactory?.CreateLogger(typeof(OpenApiDocumentParser)) ?? NullLogger.Instance;
+        this._logger = loggerFactory is not null ? loggerFactory.CreateLogger(typeof(OpenApiDocumentParser)) : NullLogger.Instance;
     }
 
     /// <inheritdoc/>
@@ -231,7 +232,7 @@ internal sealed class OpenApiDocumentParser : IOpenApiDocumentParser
                 (RestApiOperationParameterLocation)Enum.Parse(typeof(RestApiOperationParameterLocation), parameter.In.ToString()!),
                 (RestApiOperationParameterStyle)Enum.Parse(typeof(RestApiOperationParameterStyle), parameter.Style.ToString()!),
                 parameter.Schema.Items?.Type,
-                GetParameterValue(parameter.Schema.Default),
+                GetParameterValue(parameter.Name, parameter.Schema.Default),
                 parameter.Description,
                 parameter.Schema.ToJsonSchema()
             );
@@ -324,9 +325,10 @@ internal sealed class OpenApiDocumentParser : IOpenApiDocumentParser
     /// <summary>
     /// Returns parameter value.
     /// </summary>
+    /// <param name="name">The parameter name.</param>
     /// <param name="valueMetadata">The value metadata.</param>
     /// <returns>The parameter value.</returns>
-    private static string? GetParameterValue(IOpenApiAny valueMetadata)
+    private static string? GetParameterValue(string name, IOpenApiAny valueMetadata)
     {
         if (valueMetadata is not IOpenApiPrimitive value)
         {

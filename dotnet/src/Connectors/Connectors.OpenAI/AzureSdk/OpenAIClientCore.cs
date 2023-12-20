@@ -15,9 +15,9 @@ namespace Microsoft.SemanticKernel.Connectors.OpenAI;
 internal sealed class OpenAIClientCore : ClientCore
 {
     /// <summary>
-    /// Gets the attribute name used to store the organization in the <see cref="IAIService.Attributes"/> dictionary.
+    /// Attribute name used to store the organization in the <see cref="IAIService.Attributes"/> dictionary.
     /// </summary>
-    public static string OrganizationKey => "Organization";
+    public const string OrganizationKey = "Organization";
 
     /// <summary>
     /// OpenAI / Azure OpenAI Client

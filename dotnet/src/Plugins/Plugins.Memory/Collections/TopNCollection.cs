@@ -3,7 +3,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Microsoft.SemanticKernel.Memory;
+namespace Microsoft.SemanticKernel.Plugins.Memory.Collections;
 
 /// <summary>
 /// A collector for Top N matches. Keeps only the best N matches by Score.

@@ -3,9 +3,12 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
+using Microsoft.SemanticKernel.PromptTemplate.Handlebars;
 
-// This example shows how to use multiple prompt template formats.
+/**
+ * This example shows how to use multiple prompt template formats.
+ */
+// ReSharper disable once InconsistentNaming
 public static class Example64_MultiplePromptTemplates
 {
     /// <summary>
@@ -29,10 +32,10 @@ public static class Example64_MultiplePromptTemplates
         Kernel kernel = Kernel.CreateBuilder()
             .AddAzureOpenAIChatCompletion(
                 deploymentName: chatDeploymentName,
+                modelId: chatModelId,
                 endpoint: endpoint,
                 serviceId: "AzureOpenAIChat",
-                apiKey: apiKey,
-                modelId: chatModelId)
+                apiKey: apiKey)
             .Build();
 
         var promptTemplateFactory = new AggregatorPromptTemplateFactory(

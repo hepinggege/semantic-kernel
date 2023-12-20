@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -17,9 +18,10 @@ internal static class KernelFunctionMetadataExtensions
     /// Creates a <see cref="JsonSchemaFunctionView"/> for a function.
     /// </summary>
     /// <param name="function">The function.</param>
+    /// <param name="jsonSchemaDelegate">A delegate that creates a JSON Schema from a <see cref="Type"/> and a semantic description.</param>
     /// <param name="includeOutputSchema">Indicates if the schema should include information about the output or return type of the function.</param>
     /// <returns>An instance of <see cref="JsonSchemaFunctionView"/></returns>
-    public static JsonSchemaFunctionView ToJsonSchemaFunctionView(this KernelFunctionMetadata function, bool includeOutputSchema = true)
+    public static JsonSchemaFunctionView ToJsonSchemaFunctionView(this KernelFunctionMetadata function, Func<Type?, string?, KernelJsonSchema?> jsonSchemaDelegate, bool includeOutputSchema = true)
     {
         var functionView = new JsonSchemaFunctionView
         {
@@ -30,7 +32,7 @@ internal static class KernelFunctionMetadataExtensions
         var requiredProperties = new List<string>();
         foreach (var parameter in function.Parameters)
         {
-            var schema = parameter.Schema;
+            var schema = parameter.Schema ?? jsonSchemaDelegate(parameter.ParameterType, parameter.Description);
             if (schema is not null)
             {
                 functionView.Parameters.Properties.Add(parameter.Name, schema);
@@ -48,7 +50,8 @@ internal static class KernelFunctionMetadataExtensions
                 Description = SuccessfulResponseDescription
             };
 
-            functionResponse.Content.JsonResponse.Schema = function.ReturnParameter.Schema;
+            var schema = function.ReturnParameter.Schema ?? jsonSchemaDelegate(function.ReturnParameter.ParameterType, SuccessfulResponseDescription);
+            functionResponse.Content.JsonResponse.Schema = schema;
 
             functionView.FunctionResponses.Add(SuccessfulResponseCode, functionResponse);
         }
@@ -66,14 +69,16 @@ internal static class KernelFunctionMetadataExtensions
     {
         var inputs = string.Join("\n", function.Parameters.Select(parameter =>
         {
-            var defaultValueString = InternalTypeConverter.ConvertToString(parameter.DefaultValue);
-            defaultValueString = string.IsNullOrEmpty(defaultValueString) ? string.Empty : $" (default value: {defaultValueString})";
+            var defaultValueString = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" (default value: {parameter.DefaultValue})";
             return $"    - {parameter.Name}: {parameter.Description}{defaultValueString}";
         }));
 
         // description and inputs are indented by 2 spaces
         // While each parameter in inputs is indented by 4 spaces
-        return $"{function.ToFullyQualifiedName()}:  description: {function.Description}  inputs:{inputs}";
+        return $@"{function.ToFullyQualifiedName()}:
+  description: {function.Description}
+  inputs:
+{inputs}";
     }
 
     /// <summary>

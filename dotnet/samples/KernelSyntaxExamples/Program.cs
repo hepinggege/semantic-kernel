@@ -11,15 +11,7 @@ using RepoUtils;
 
 public static class Program
 {
-    /// <summary>
-    /// We recommend using the Debug properties to set the filter as a command line argument.
-    /// If you don't want to use it, set the filter here.
-    /// Examples:
-    ///     DefaultFilter = "18"    => run only example 18 (also "180" if there is such test)
-    ///     DefaultFilter = "chat"  => run all examples with a name that contains "chat"
-    /// </summary>
-    public const string? DefaultFilter = "";
-
+    // ReSharper disable once InconsistentNaming
     public static async Task Main(string[] args)
     {
         // Load configuration from environment variables or user secrets.
@@ -29,8 +21,10 @@ public static class Program
         using CancellationTokenSource cancellationTokenSource = new();
         CancellationToken cancelToken = cancellationTokenSource.ConsoleCancellationToken();
 
+        string? defaultFilter = null; // Modify to filter examples
+
         // Check if args[0] is provided
-        string? filter = args.Length > 0 ? args[0] : DefaultFilter;
+        string? filter = args.Length > 0 ? args[0] : defaultFilter;
 
         // Run examples based on the filter
         await RunExamplesAsync(filter, cancelToken);
@@ -39,6 +33,7 @@ public static class Program
     private static async Task RunExamplesAsync(string? filter, CancellationToken cancellationToken)
     {
         var examples = (Assembly.GetExecutingAssembly().GetTypes())
+            .Where(type => type.Name.StartsWith("Example", StringComparison.OrdinalIgnoreCase))
             .Select(type => type.Name).ToList();
 
         // Filter and run examples
@@ -48,14 +43,14 @@ public static class Program
             {
                 try
                 {
+                    Console.WriteLine($"Running {example}...");
+
                     var method = Assembly.GetExecutingAssembly().GetType(example)?.GetMethod("RunAsync");
                     if (method == null)
                     {
-                        // Skip if the type does not have a RunAsync method
+                        Console.WriteLine($"Example {example} not found");
                         continue;
                     }
-
-                    Console.WriteLine($"Running {example}...");
 
                     bool hasCancellationToken = method.GetParameters().Any(param => param.ParameterType == typeof(CancellationToken));
 
@@ -80,7 +75,6 @@ public static class Program
     private static void LoadUserSecrets()
     {
         IConfigurationRoot configRoot = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.Development.json", true)
             .AddEnvironmentVariables()
             .AddUserSecrets<Env>()
             .Build();
@@ -105,7 +99,6 @@ public static class Program
         try
         {
             await task.WaitAsync(cancellationToken);
-            Console.WriteLine();
             Console.WriteLine("== DONE ==");
         }
         catch (ConfigurationNotFoundException ex)

@@ -6,18 +6,19 @@ using Azure.Identity;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
-/// <summary>
-/// This example shows how to connect your app to Azure OpenAI using
-/// Azure Active Directory(AAD) authentication, as opposed to API keys.
-///
-/// The example uses <see cref="DefaultAzureCredential"/>, which you can configure to support
-/// multiple authentication strategies:
-///
-/// -Env vars present in Azure VMs
-/// -Azure Managed Identities
-/// -Shared tokens
-/// -etc.
-/// </summary>
+/**
+ * This example shows how to connect your app to Azure OpenAI using
+ * Azure Active Directory (AAD) authentication, as opposed to API keys.
+ *
+ * The example uses DefaultAzureCredential, which you can configure to support
+ * multiple authentication strategies:
+ *
+ * - Env vars present in Azure VMs
+ * - Azure Managed Identities
+ * - Shared tokens
+ * - etc.
+ */
+// ReSharper disable once InconsistentNaming
 public static class Example26_AADAuth
 {
     public static async Task RunAsync()
@@ -42,9 +43,9 @@ public static class Example26_AADAuth
         Kernel kernel = Kernel.CreateBuilder()
             // Add Azure OpenAI chat completion service using DefaultAzureCredential AAD auth
             .AddAzureOpenAIChatCompletion(
-                deploymentName: TestConfiguration.AzureOpenAI.ChatDeploymentName,
-                endpoint: TestConfiguration.AzureOpenAI.Endpoint,
-                credentials: new DefaultAzureCredential(authOptions))
+                TestConfiguration.AzureOpenAI.ChatDeploymentName,
+                TestConfiguration.AzureOpenAI.Endpoint,
+                new DefaultAzureCredential(authOptions))
             .Build();
 
         IChatCompletionService chatGPT = kernel.GetRequiredService<IChatCompletionService>();

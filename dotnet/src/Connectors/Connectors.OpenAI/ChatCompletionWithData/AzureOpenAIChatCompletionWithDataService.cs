@@ -45,7 +45,7 @@ public sealed class AzureOpenAIChatCompletionWithDataService : IChatCompletionSe
         this._config = config;
 
         this._httpClient = HttpClientProvider.GetHttpClient(httpClient);
-        this._logger = loggerFactory?.CreateLogger(this.GetType()) ?? NullLogger.Instance;
+        this._logger = loggerFactory is not null ? loggerFactory.CreateLogger(this.GetType()) : NullLogger.Instance;
         this._attributes.Add(AIServiceExtensions.ModelIdKey, config.CompletionModelId);
     }
 
@@ -102,6 +102,14 @@ public sealed class AzureOpenAIChatCompletionWithDataService : IChatCompletionSe
         Verify.NotNullOrWhiteSpace(config.DataSourceIndex);
     }
 
+    private static void ValidateMaxTokens(int? maxTokens)
+    {
+        if (maxTokens.HasValue && maxTokens < 1)
+        {
+            throw new ArgumentException($"MaxTokens {maxTokens} is not valid, the value must be greater than zero");
+        }
+    }
+
     private async Task<IReadOnlyList<ChatMessageContent>> InternalGetChatMessageContentsAsync(
         ChatHistory chat,
         PromptExecutionSettings? executionSettings,
@@ -116,7 +124,7 @@ public sealed class AzureOpenAIChatCompletionWithDataService : IChatCompletionSe
         var body = await response.Content.ReadAsStringWithExceptionMappingAsync().ConfigureAwait(false);
 
         var chatWithDataResponse = this.DeserializeResponse<ChatWithDataResponse>(body);
-        IReadOnlyDictionary<string, object?> metadata = GetResponseMetadata(chatWithDataResponse);
+        var metadata = GetResponseMetadata(chatWithDataResponse);
 
         return chatWithDataResponse.Choices.Select(choice => new AzureOpenAIWithDataChatMessageContent(choice, this.GetModelId(), metadata)).ToList();
     }
@@ -195,11 +203,11 @@ public sealed class AzureOpenAIChatCompletionWithDataService : IChatCompletionSe
             }
 
             var chatWithDataResponse = this.DeserializeResponse<ChatWithDataStreamingResponse>(body);
-            IReadOnlyDictionary<string, object?> metadata = GetResponseMetadata(chatWithDataResponse);
+            var metadata = GetResponseMetadata(chatWithDataResponse);
 
             foreach (var choice in chatWithDataResponse.Choices)
             {
-                yield return new AzureOpenAIWithDataStreamingChatMessageContent(choice, choice.Index, this.GetModelId()!, metadata);
+                yield return new AzureOpenAIWithDataStreamingChatMessageContent(choice, choice.Index, this.GetModelId()!, new Dictionary<string, object?>(metadata));
             }
         }
     }
@@ -234,7 +242,7 @@ public sealed class AzureOpenAIChatCompletionWithDataService : IChatCompletionSe
             MaxTokens = executionSettings.MaxTokens,
             PresencePenalty = executionSettings.PresencePenalty,
             FrequencyPenalty = executionSettings.FrequencyPenalty,
-            TokenSelectionBiases = executionSettings.TokenSelectionBiases ?? new Dictionary<int, int>(),
+            TokenSelectionBiases = executionSettings.TokenSelectionBiases,
             DataSources = this.GetDataSources(),
             Messages = this.GetMessages(chat)
         };
@@ -274,6 +282,31 @@ public sealed class AzureOpenAIChatCompletionWithDataService : IChatCompletionSe
                 Content = message.Content ?? string.Empty
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// Create a new empty chat instance
+    /// </summary>
+    /// <param name="text">Optional chat instructions for the AI service</param>
+    /// <param name="executionSettings">Execution settings</param>
+    /// <returns>Chat object</returns>
+    private static OpenAIChatHistory InternalCreateNewChat(string? text = null, OpenAIPromptExecutionSettings? executionSettings = null)
+    {
+        // If text is not provided, create an empty chat with the system prompt if provided
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return new OpenAIChatHistory(executionSettings?.ChatSystemPrompt);
+        }
+
+        // If settings is not provided, create a new chat with the text as the system prompt
+        var chat = new OpenAIChatHistory(executionSettings?.ChatSystemPrompt ?? text);
+        if (executionSettings is not null)
+        {
+            // If settings is provided, add the prompt as the user message
+            chat.AddUserMessage(text!);
+        }
+
+        return chat;
     }
 
     private string GetRequestUri()

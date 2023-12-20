@@ -10,9 +10,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.SemanticKernel.Connectors.Memory.Chroma.Http.ApiSchema;
+using Microsoft.SemanticKernel.Connectors.Memory.Chroma.Http.ApiSchema.Internal;
 using Microsoft.SemanticKernel.Http;
 
-namespace Microsoft.SemanticKernel.Connectors.Chroma;
+namespace Microsoft.SemanticKernel.Connectors.Memory.Chroma;
 
 /// <summary>
 /// An implementation of a client for the Chroma Vector DB. This class is used to
@@ -33,7 +35,7 @@ public class ChromaClient : IChromaClient
 
         this._httpClient = HttpClientProvider.GetHttpClient();
         this._endpoint = endpoint;
-        this._logger = loggerFactory?.CreateLogger(typeof(ChromaClient)) ?? NullLogger.Instance;
+        this._logger = loggerFactory is not null ? loggerFactory.CreateLogger(typeof(ChromaClient)) : NullLogger.Instance;
     }
 
     /// <summary>
@@ -52,7 +54,7 @@ public class ChromaClient : IChromaClient
 
         this._httpClient = httpClient;
         this._endpoint = endpoint;
-        this._logger = loggerFactory?.CreateLogger(typeof(ChromaClient)) ?? NullLogger.Instance;
+        this._logger = loggerFactory is not null ? loggerFactory.CreateLogger(typeof(ChromaClient)) : NullLogger.Instance;
     }
 
     /// <inheritdoc />

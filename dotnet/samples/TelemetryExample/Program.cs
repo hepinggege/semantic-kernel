@@ -3,13 +3,17 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Monitor.OpenTelemetry.Exporter;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Planning.Handlebars;
+using Microsoft.SemanticKernel.Plugins.Core;
+using Microsoft.SemanticKernel.Plugins.Web;
+using Microsoft.SemanticKernel.Plugins.Web.Bing;
+using NCalcPlugins;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -39,10 +43,7 @@ public sealed class Program
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task Main()
     {
-        // Load configuration from environment variables or user secrets.
-        LoadUserSecrets();
-
-        var connectionString = TestConfiguration.ApplicationInsights.ConnectionString;
+        var connectionString = Env.Var("ApplicationInsights__ConnectionString");
 
         using var traceProvider = Sdk.CreateTracerProviderBuilder()
             .AddSource("Microsoft.SemanticKernel*")
@@ -80,7 +81,7 @@ public sealed class Program
         Console.WriteLine("Original plan:");
         Console.WriteLine(plan.ToString());
 
-        var result = await plan.InvokeAsync(kernel).ConfigureAwait(false);
+        var result = await plan.InvokeAsync(kernel, new KernelArguments(), CancellationToken.None);
 
         Console.WriteLine("Result:");
         Console.WriteLine(result);
@@ -89,17 +90,22 @@ public sealed class Program
     private static Kernel GetKernel(ILoggerFactory loggerFactory)
     {
         var folder = RepoFiles.SamplePluginsPath();
+        var bingConnector = new BingConnector(Env.Var("Bing__ApiKey"));
+        var webSearchEnginePlugin = new WebSearchEnginePlugin(bingConnector);
 
         IKernelBuilder builder = Kernel.CreateBuilder();
 
         builder.Services.AddSingleton(loggerFactory);
         builder.AddAzureOpenAIChatCompletion(
-            deploymentName: TestConfiguration.AzureOpenAI.ChatDeploymentName,
-            modelId: TestConfiguration.AzureOpenAI.ChatModelId,
-            endpoint: TestConfiguration.AzureOpenAI.Endpoint,
-            apiKey: TestConfiguration.AzureOpenAI.ApiKey
-        ).Build();
+            Env.Var("AzureOpenAI__ChatDeploymentName"),
+            Env.Var("AzureOpenAI__ChatModelId"),
+            Env.Var("AzureOpenAI__Endpoint"),
+            Env.Var("AzureOpenAI__ApiKey"));
 
+        builder.Plugins.AddFromObject(webSearchEnginePlugin, "WebSearch");
+        builder.Plugins.AddFromType<LanguageCalculatorPlugin>("advancedCalculator");
+        builder.Plugins.AddFromType<TimePlugin>();
+        builder.Plugins.AddFromPromptDirectory(Path.Combine(folder, "SummarizePlugin"));
         builder.Plugins.AddFromPromptDirectory(Path.Combine(folder, "WriterPlugin"));
 
         return builder.Build();
@@ -107,16 +113,7 @@ public sealed class Program
 
     private static HandlebarsPlanner CreatePlanner(int maxTokens = 1024)
     {
-        var plannerConfig = new HandlebarsPlannerOptions { MaxTokens = maxTokens };
+        var plannerConfig = new HandlebarsPlannerConfig { MaxTokens = maxTokens };
         return new HandlebarsPlanner(plannerConfig);
-    }
-
-    private static void LoadUserSecrets()
-    {
-        IConfigurationRoot configRoot = new ConfigurationBuilder()
-            .AddEnvironmentVariables()
-            .AddUserSecrets<Program>()
-            .Build();
-        TestConfiguration.Initialize(configRoot);
     }
 }

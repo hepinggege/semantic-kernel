@@ -18,7 +18,7 @@ using Azure.Search.Documents.Models;
 using Microsoft.SemanticKernel.Http;
 using Microsoft.SemanticKernel.Memory;
 
-namespace Microsoft.SemanticKernel.Connectors.AzureAISearch;
+namespace Microsoft.SemanticKernel.Connectors.Memory.AzureAISearch;
 
 /// <summary>
 /// <see cref="AzureAISearchMemoryStore"/> is a memory store implementation using Azure AI Search.
@@ -179,18 +179,16 @@ public class AzureAISearchMemoryStore : IMemoryStore
 
         var client = this.GetSearchClient(normalizedIndexName);
 
-        VectorizedQuery vectorQuery = new(MemoryMarshal.TryGetArray(embedding, out var array) && array.Count == embedding.Length ? array.Array! : embedding.ToArray())
+        RawVectorQuery vectorQuery = new()
         {
             KNearestNeighborsCount = limit,
             Fields = { AzureAISearchMemoryRecord.EmbeddingField },
+            Vector = MemoryMarshal.TryGetArray(embedding, out var array) && array.Count == embedding.Length ? array.Array! : embedding.ToArray(),
         };
 
         SearchOptions options = new()
         {
-            VectorSearch = new()
-            {
-                Queries = { vectorQuery }
-            },
+            VectorQueries = { vectorQuery }
         };
 
         Response<SearchResults<AzureAISearchMemoryRecord>>? searchResult = null;
@@ -285,7 +283,12 @@ public class AzureAISearchMemoryStore : IMemoryStore
             Fields = new List<SearchField>
             {
                 new SimpleField(AzureAISearchMemoryRecord.IdField, SearchFieldDataType.String) { IsKey = true },
-                new VectorSearchField(AzureAISearchMemoryRecord.EmbeddingField, embeddingSize, ProfileName),
+                new(AzureAISearchMemoryRecord.EmbeddingField, SearchFieldDataType.Collection(SearchFieldDataType.Single))
+                {
+                    IsSearchable = true,
+                    VectorSearchDimensions = embeddingSize,
+                    VectorSearchProfile = ProfileName
+                },
                 new(AzureAISearchMemoryRecord.TextField, SearchFieldDataType.String) { IsFilterable = true, IsFacetable = true },
                 new SimpleField(AzureAISearchMemoryRecord.DescriptionField, SearchFieldDataType.String) { IsFilterable = true, IsFacetable = true },
                 new SimpleField(AzureAISearchMemoryRecord.AdditionalMetadataField, SearchFieldDataType.String) { IsFilterable = true, IsFacetable = true },
@@ -296,7 +299,7 @@ public class AzureAISearchMemoryStore : IMemoryStore
             {
                 Algorithms =
                 {
-                    new HnswAlgorithmConfiguration(AlgorithmName)
+                    new HnswVectorSearchAlgorithmConfiguration(AlgorithmName)
                     {
                         Parameters = new HnswParameters { Metric = VectorSearchAlgorithmMetric.Cosine }
                     }

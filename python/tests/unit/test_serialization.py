@@ -1,3 +1,4 @@
+import logging
 import typing as t
 
 import pytest
@@ -125,9 +126,9 @@ def sk_factory() -> t.Callable[[t.Type[_Serializable]], _Serializable]:
         TextBlock: TextBlock(content="baz"),
         ValBlock: ValBlock(content="qux"),
         VarBlock: VarBlock(content="quux"),
-        CodeTokenizer: CodeTokenizer(),
-        PromptTemplateEngine: PromptTemplateEngine(),
-        TemplateTokenizer: TemplateTokenizer(),
+        CodeTokenizer: CodeTokenizer(log=logging.getLogger("test")),
+        PromptTemplateEngine: PromptTemplateEngine(logger=logging.getLogger("test")),
+        TemplateTokenizer: TemplateTokenizer(log=logging.getLogger("test")),
         ParameterView: ParameterView(
             name="foo",
             description="bar",

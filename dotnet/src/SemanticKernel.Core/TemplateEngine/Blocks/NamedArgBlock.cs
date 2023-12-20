@@ -3,7 +3,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.SemanticKernel.TemplateEngine;
+namespace Microsoft.SemanticKernel.TemplateEngine.Blocks;
 
 /// <summary>
 /// A <see cref="Block"/> that represents a named argument for a function call.

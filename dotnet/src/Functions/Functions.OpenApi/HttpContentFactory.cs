@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Net.Http;
+using Microsoft.SemanticKernel.Plugins.OpenApi.Model;
 
 namespace Microsoft.SemanticKernel.Plugins.OpenApi;
 
@@ -11,4 +12,4 @@ namespace Microsoft.SemanticKernel.Plugins.OpenApi;
 /// <param name="payload">The operation payload metadata.</param>
 /// <param name="arguments">The operation arguments.</param>
 /// <returns>The HTTP content representing the operation payload.</returns>
-internal delegate HttpContent HttpContentFactory(RestApiOperationPayload? payload, IDictionary<string, object?> arguments);
+internal delegate HttpContent HttpContentFactory(RestApiOperationPayload? payload, IDictionary<string, string> arguments);

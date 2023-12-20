@@ -7,6 +7,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using RepoUtils;
 
+// ReSharper disable once InconsistentNaming
 public static class Example57_KernelHooks
 {
     private static string? s_openAIModelId;
@@ -87,7 +88,7 @@ public static class Example57_KernelHooks
 
         // Invoke prompt to trigger execution hooks.
         const string Input = "I missed the F1 final race";
-        var result = await kernel.InvokeAsync(excuseFunction, new() { ["input"] = Input });
+        var result = await kernel.InvokeAsync(excuseFunction, new(Input));
         Console.WriteLine($"Function Result: {result}");
     }
 
@@ -135,7 +136,7 @@ public static class Example57_KernelHooks
 
         // Invoke prompt to trigger prompt rendering hooks.
         const string Input = "I missed the F1 final race";
-        var result = await kernel.InvokeAsync(excuseFunction, new() { ["input"] = Input });
+        var result = await kernel.InvokeAsync(excuseFunction, new(Input));
         Console.WriteLine($"Function Result: {result.GetValue<string>()}");
     }
 
